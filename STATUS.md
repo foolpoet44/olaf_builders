@@ -1,9 +1,9 @@
 # STATUS — OLAF Builders (재구축판)
 
 - 완료: P0 · P1 · P2 · P3 · P4 커뮤니티 기본 · P4.5 확장 1차 · P4.6 확장 2차
-- 진행: 릴리스 패키징 검증
+- 진행: 없음 (P0~P4.6 개발 PC 범위 완료 · 릴리스 20261113-01 꾸러미 검증)
 - 블로커: 서버 설치 전 결정 B1~B5 (docs/11_DECISIONS.md) · 기존 리포 노출 비밀번호 교체 B7
-- 다음: P1 → P2 → P3 → P4 → P4.5 → P4.6
+- 다음: 결정 B1~B11 회신 → 대상 서버 install.ps1 · check.ps1 · UAT → P5 (helpful·surveys 는 B8·B9 승인 후 004)
 
 ## 단계 보드
 
@@ -17,6 +17,8 @@
 | P4.5 확장 1차 | 완료 | 누적 110 PASS | 틀·디렉터리·고정·채택·카드 답변 글·알림 API + 기능 끔 회귀. 화면 directory.html·board-ext.js·portal-ext.js |
 | P4.6 확장 2차 | 완료 | 누적 119 PASS + 라이브 스모크 | 일정·이번 주 새 글·안내 문안·자료 질문 스레드·저장함·태그·신고 + 화면(events·bookmarks·admin/reports·자료 패널·포털 블록) · 기능 끔 회귀 |
 
+| 릴리스 | 확인 | pack.ps1 | 20261113-01 · 스키마 001~003 만(004 제외) · test 제외 · 압축 해제본을 NODE_ENV=production 새 데이터 폴더로 기동 → readyz ready · user_version 3 · 화면 19개·API 스모크 통과 |
+
 ## 미검증 (대상 서버 필요)
 
 - NSSM 등록·서비스 시작/중지·AppStopMethodConsole 정상 종료 · 서비스 계정 권한 · 방화벽 · 다른 PC 접속 · 재부팅 복구
@@ -25,4 +27,6 @@
 
 - PowerShell 5.1 은 BOM 없는 UTF-8 스크립트의 한글을 시스템 코드 페이지로 읽어 구문 오류가 난다 → `deploy/*.ps1` 은 UTF-8 BOM + CRLF 로 저장한다(편집기 설정 주의).
 - Windows 에서 `process.exit()` 를 진행 중인 fetch 직후 호출하면 libuv 단언 실패가 난다 → 도구는 `process.exitCode` 로 끝낸다.
+- 테스트 하나가 실패하면 그 테스트가 띄운 서버가 안 닫혀 `npm test` 가 끝나지 않던 문제 → 확장 테스트는 after 에서 일괄 종료 · `--test-timeout=30000` 추가.
+- 화면 단위 브라우저 클릭 시험(E2E)은 하지 않았다 — 정적 파일 200·구문 검사·API 스모크까지만. UAT 때 사람이 확인.
 - `install.ps1 -NssmExe` 매개변수 추가: 기본값은 서버의 NSSM 경로, 개발 PC 에서 DryRun 시험용으로만 바꾼다.
