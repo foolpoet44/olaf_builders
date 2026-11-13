@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>교육 자료 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/materials.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <section id="list-view">
+      <h1>교육 자료</h1>
+      <div id="list"></div>
+    </section>
+    <section id="viewer-view" class="hidden">
+      <div class="row">
+        <button id="back">← 목록</button>
+        <h2 id="v-title" style="margin:0"></h2>
+        <span class="spacer"></span>
+        <button id="prev" aria-label="이전 쪽">←</button>
+        <input type="number" id="page" min="1" style="width:70px">
+        <span id="total" class="muted"></span>
+        <button id="next" aria-label="다음 쪽">→</button>
+        <button id="fit">100%</button>
+      </div>
+      <div class="viewer no-side" id="viewer" style="margin-top:12px">
+        <div><canvas id="cv"></canvas>
+          <p class="notice-foot">화면 캡처는 막을 수 없습니다. 무단 배포 금지 — 쪽마다 워터마크가 있습니다.</p>
+        </div>
+        <aside id="threads" class="hidden"></aside>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

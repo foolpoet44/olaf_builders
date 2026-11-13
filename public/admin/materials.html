@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>교육 자료 관리 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/admin-materials.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <h1>교육 자료 관리</h1>
+    <div class="card">
+      <h3>자료 꾸러미 올리기</h3>
+      <p class="small muted">zip 안에 <code>manifest.json</code> 과 <code>p001.webp</code>… 만 넣습니다. PDF 원본은 올리지 않습니다 (사무국 PC 도구 tools/render-pdf 로 변환).</p>
+      <div class="row"><input type="file" id="file" accept=".zip,application/zip"><button class="primary" id="up">올리기</button></div>
+      <div id="out"></div>
+    </div>
+    <h2 style="margin-top:24px">자료 목록</h2>
+    <table><thead><tr><th>#</th><th>제목</th><th>강사</th><th>세션</th><th>쪽</th><th>열람 건수</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  </main>
+</body>
+</html>

@@ -10,3 +10,5 @@ secrets.json
 logs/
 dist/
 *.log
+.venv-render/
+__pycache__/
