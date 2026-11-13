@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>로그인 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/login.js"></script>
+</head>
+<body>
+  <div class="sec-band" id="band">LGE Internal Use Only</div>
+  <main class="narrow">
+    <h1 id="title">OLAF Builders</h1>
+    <p class="muted" id="msg-brand"></p>
+    <form id="f" class="card" autocomplete="off">
+      <label for="code">접속 코드</label>
+      <input type="text" id="code" name="code" placeholder="XXXX-XXXX-XXXX" maxlength="16" inputmode="text" autocapitalize="characters" spellcheck="false" required>
+      <div id="out"></div>
+      <div class="row end" style="margin-top:14px"><button class="primary" type="submit" id="go">로그인</button></div>
+    </form>
+    <p class="small muted">접속 코드는 사무국이 1인 1개 발급합니다. 잃어버렸다면 사무국에 재발급을 요청하세요.</p>
+  </main>
+</body>
+</html>

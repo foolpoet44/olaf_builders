@@ -5,6 +5,7 @@ import { ROOT } from './config.js';
 import { securityHeaders } from './middleware/security.js';
 import { requestId, apiNotFound, errorHandler } from './middleware/errors.js';
 import { healthRoutes } from './routes/health.js';
+import { session, originCheck } from './middleware/session.js';
 
 export const PUBLIC_DIR = path.join(ROOT, 'public');
 
@@ -31,8 +32,10 @@ export function createApp(deps) {
 
   // --- API -----------------------------------------------------------
   const api = express.Router();
-  api.use(express.json({ limit: '64kb' }));
-  // (P1~) 라우트 등록 지점
+  // zip 업로드 라우트는 자체 raw 파서를 쓴다
+  api.use((req, res, next) => (req.is('application/zip') ? next() : express.json({ limit: '64kb' })(req, res, next)));
+  api.use(originCheck);
+  api.use(session(deps));
   for (const register of deps.apiRoutes ?? []) register(api, deps);
   api.use(apiNotFound);
   app.use('/api', api);

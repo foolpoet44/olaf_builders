@@ -34,7 +34,9 @@ export function bootstrap(env, opt = {}) {
   const settings = createSettings(cfg, env.configFile);
   const audit = makeAudit(db, clock);
   if (mig.to !== mig.from) audit('SYSTEM', 'migrate', `v${mig.from}->v${mig.to}`);
-  const deps = { env, settings, db, secrets, clock, audit, schemaVersion, apiRoutes };
+  // hooks: 뒤 단계·확장 모듈이 기존 응답에 칸을 붙이거나 저장 뒤 동작을 더하는 지점 (docs/02 7-1절)
+  const hooks = { me: [], codeIssue: [], stats: [], postSaved: [], postListItem: [], postDetail: [], spaceItem: [], qcardItem: [], postsList: [] };
+  const deps = { env, settings, db, secrets, clock, audit, schemaVersion, apiRoutes, hooks };
   seed(deps);
   const app = createApp(deps);
   return { app, deps, migration: mig, secretsCreated: secrets.created };

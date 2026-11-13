@@ -1,0 +1,7 @@
+﻿person_id,role,name,title,lab,group,assigned,challenge,email
+TEST-001,builder,가나다,책임,PA,PA-1,,설비 예지보전,a@example.com
+TEST-002,builder,라마바,선임,PA,PA-2,,AMR 경로 최적화,
+TEST-003,builder,사아자,책임,AA,AA-1,,공정 지식 그래프,
+TEST-004,builder,차카타,선임,DT,DT-1,,"라인 시뮬레이터, 1단계",
+MS-01,master,파하가,교수,,,PA;AA-1,,
+OP-02,office,나다라,사무국,,,,,
