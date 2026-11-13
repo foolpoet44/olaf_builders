@@ -15,8 +15,7 @@ param(
   [string]$BindHost = '127.0.0.1',
   [string]$OfficeId = 'OP-01',
   [string]$OfficeName = '사무국',
-  [string]$NssmExe = 'C:appsmeeting_recorder_v2
-ssm.exe',
+  [string]$NssmExe = 'C:\apps\meeting_recorder_v2\nssm.exe',
   [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
