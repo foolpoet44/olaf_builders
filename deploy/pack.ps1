@@ -36,7 +36,8 @@ try {
   Remove-Item $tarball
 
   # 서버 꾸러미에 넣지 않는 것: 문서 원본 일부는 유지(README·docs), 사무국 PC 도구·dist 는 제외
-  foreach ($x in @('tools\render-pdf', 'dist', 'test')) {
+  # src\schema-optional 은 결정 B8·B9 전에는 릴리스에 넣지 않는다 (docs/03 5항)
+  foreach ($x in @('tools\render-pdf', 'dist', 'test', 'src\schema-optional')) {
     $p = Join-Path $stage $x
     if (Test-Path $p) { Remove-Item -Recurse -Force $p }
   }
