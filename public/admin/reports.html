@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>신고 처리 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/admin-reports.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <h1>신고 처리</h1>
+    <p class="small muted">신고자 신원은 사무국만 봅니다. 작성자에게는 "운영 규칙에 따라 숨김" 안내만 보입니다.</p>
+    <label class="row"><input type="checkbox" id="open" checked style="width:auto"> 처리 대기만</label>
+    <table><thead><tr><th>시각</th><th>글</th><th>사유</th><th>메모</th><th>신고자</th><th>상태</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  </main>
+</body>
+</html>

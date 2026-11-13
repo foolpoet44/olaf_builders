@@ -85,5 +85,5 @@ document.addEventListener('keydown', (e) => {
 });
 
 const m = qs('m');
-if (m) openMaterial(m).catch(() => { location.href = '/materials.html'; });
+if (m) openMaterial(m).then(() => { const pg = Number(qs('page')); if (pg > 1) go(pg); }).catch(() => { location.href = '/materials.html'; });
 else loadList();
