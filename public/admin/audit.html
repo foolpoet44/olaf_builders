@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>감사 기록 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/admin-audit.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <h1>감사 기록</h1>
+    <p class="small muted">추가만 하는 기록입니다. 수정·삭제할 수 없습니다.</p>
+    <table><thead><tr><th>#</th><th>시각</th><th>행위자</th><th>동작</th><th>대상</th><th>결과</th></tr></thead><tbody id="rows"></tbody></table>
+    <div class="row end" style="margin-top:10px"><button id="prev">이전</button><span id="pg" class="muted"></span><button id="next">다음</button></div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>질문 카드 관리 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/admin-qcards.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <div class="row">
+      <h1 style="margin:0">질문 카드</h1>
+      <span class="spacer"></span>
+      <label style="margin:0" class="row"><input type="checkbox" id="closed"> 제출 마감</label>
+      <a class="btn" href="/api/admin/qcards/export.csv">CSV 내려받기</a>
+    </div>
+    <p class="small muted">정렬: 세션 → Lab → 그룹 → 접수순 (순위 없음)</p>
+    <div class="row">
+      <select id="f-session"><option value="">전체 세션</option></select>
+      <select id="f-lab"><option value="">전체 Lab</option></select>
+      <select id="f-status"><option value="">전체 상태</option></select>
+    </div>
+    <table style="margin-top:12px"><thead><tr><th>세션</th><th>Lab·그룹</th><th>작성자</th><th>낭독 문장</th><th>상태</th><th>선정</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+  </main>
+</body>
+</html>

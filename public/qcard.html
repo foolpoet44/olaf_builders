@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>질문 카드 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/qcard.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main>
+    <h1>질문 카드</h1>
+    <div id="closed" class="hidden msg info"></div>
+    <section id="form-wrap" class="card hidden">
+      <h3 id="form-title">새 카드</h3>
+      <label for="session">세션</label>
+      <select id="session"></select>
+      <div class="row" style="margin-top:12px" id="formats"></div>
+      <div id="tpl-fields">
+        <label for="situation">하려는 일 <span class="muted small" data-count="situation"></span></label>
+        <input type="text" id="situation" placeholder="예: 설비 이상 징후를 조기에 판별">
+        <label for="constraint">현재 제약 <span class="muted small" data-count="constraint"></span></label>
+        <input type="text" id="constraint" placeholder="예: 고장 이력 데이터가 30건 미만인">
+      </div>
+      <label for="ask">확인할 기준·질문 <span class="muted small" data-count="ask"></span></label>
+      <textarea id="ask" rows="3"></textarea>
+      <label>낭독 문장 미리보기 <span class="muted small" id="secs"></span></label>
+      <div class="card pre" id="preview" style="background:var(--gray-50)"></div>
+      <div id="out"></div>
+      <div class="row end" style="margin-top:12px">
+        <button id="cancel" class="hidden">수정 취소</button>
+        <button class="primary" id="submit">제출</button>
+      </div>
+    </section>
+    <h2 style="margin-top:28px">내 카드</h2>
+    <div id="mine"></div>
+  </main>
+</body>
+</html>
