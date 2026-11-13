@@ -1,0 +1,12 @@
+node_modules/
+.local/
+*.db
+*.db-wal
+*.db-shm
+*.sqlite*
+.env
+.env.*
+secrets.json
+logs/
+dist/
+*.log

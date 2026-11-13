@@ -1,0 +1,6 @@
+* text=auto eol=lf
+# PowerShell 5.1 은 BOM 없는 UTF-8 을 시스템 코드 페이지로 읽는다 -> .ps1 은 UTF-8 BOM + CRLF 로 저장
+*.ps1 text eol=crlf
+*.woff2 binary
+*.webp binary
+*.zip binary

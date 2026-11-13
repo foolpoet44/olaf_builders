@@ -1,0 +1,32 @@
+{
+  "configVersion": "1.1",
+  "qcards": {
+    "closed": true
+  },
+  "auth": {
+    "officeSessionHours": 2
+  },
+  "backup": {
+    "hourLocal": 3,
+    "keep": 14
+  },
+  "features": {
+    "helpful": false,
+    "surveys": false
+  },
+  "site": {
+    "publicBaseUrl": "http://<승인된 주소>:8091/"
+  },
+  "events": [
+    {
+      "date": "2026-12-05",
+      "title": "OLAF Build Review",
+      "kind": "review"
+    },
+    {
+      "date": "2027-01-20",
+      "title": "OLAF Demo Day",
+      "kind": "demo"
+    }
+  ]
+}
