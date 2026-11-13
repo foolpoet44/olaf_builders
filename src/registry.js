@@ -7,6 +7,7 @@ import { seedSessions } from './repo/qcards.js';
 import { boardRoutes } from './routes/board.js';
 import { seedSpaces } from './repo/posts.js';
 import { buildSpaces } from './domain/spaces.js';
+import { registerExtensions } from './routes/ext/index.js';
 import { sweepSessions } from './repo/people.js';
 
 /** @type {Array<(api: import('express').Router, deps: object) => void>} */
@@ -16,6 +17,7 @@ export const apiRoutes = [
   materialRoutes, // P2
   qcardRoutes,    // P3
   boardRoutes,    // P4 — deps.board 도우미를 만든다
+  registerExtensions, // P4.5~ 커뮤니티 확장 (docs/13) — 기존 코드 접점은 이 한 줄
 ];
 
 /** 설정 → DB 시드 (멱등) · 주기 정리 함수 */
