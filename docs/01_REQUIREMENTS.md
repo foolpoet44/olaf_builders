@@ -23,11 +23,11 @@ ID 규칙: `FR-<영역>-<번호>` 기능 · `NFR-<번호>` 비기능. 테스트�
 
 | ID | 요구사항 |
 |---|---|
-| FR-AUTH-01 | 사용자는 접속 코드 하나로 로그인한다. 성공 시 HttpOnly 세션 쿠키를 받는다 |
+| FR-AUTH-01 | 사용자는 아이디와 비밀번호로 로그인한다. 성공 시 HttpOnly 세션 쿠키를 받는다 |
 | FR-AUTH-02 | 역할은 `builder`·`master`·`office` 셋. 세션 시간: builder·master 8시간, office 2시간(설정값) |
-| FR-AUTH-03 | 틀린 코드는 접속 주소 해시당 10분에 20회까지. 넘으면 429. 맞는 시도는 세지 않는다 |
+| FR-AUTH-03 | 로그인 실패는 접속 주소 해시당 10분에 20회까지. 넘으면 429 |
 | FR-AUTH-04 | 로그아웃하면 세션을 서버에서 지운다 |
-| FR-AUTH-05 | 비활성(`active=0`) 사용자·폐기된 코드로는 로그인할 수 없고, 기존 세션도 다음 요청에서 끊긴다 |
+| FR-AUTH-05 | 비활성(`active=0`) 사용자로는 로그인할 수 없고, 비활성화·비밀번호 변경 시 기존 세션을 끊는다 |
 | FR-AUTH-06 | 모든 `/api/*`(로그인·헬스 제외)는 세션이 없으면 401, 역할이 맞지 않으면 403 |
 | FR-AUTH-07 | 로그인 화면 외의 화면은 세션이 없으면 로그인 화면으로 보낸다 (화면 보호는 편의, 실제 보호는 API) |
 | FR-AUTH-08 | 첫 화면(포털)은 역할별 메뉴를 보인다 |
@@ -36,15 +36,15 @@ ID 규칙: `FR-<영역>-<번호>` 기능 · `NFR-<번호>` 비기능. 테스트�
 
 | ID | 요구사항 |
 |---|---|
-| FR-ADM-01 | `tools/admin.js bootstrap OP-01 --name ...` — DB에 사무국이 한 명도 없을 때만 첫 사무국 계정+코드를 만든다 |
+| FR-ADM-01 | `tools/admin.js bootstrap OP-01 --name ... --username ... --password-stdin` — DB에 사무국이 한 명도 없을 때만 첫 사무국 계정과 로그인 정보를 만든다 |
 | FR-ADM-02 | `tools/admin.js import-roster <csv> --actor OP-01 [--dry-run]` — 명단 CSV를 검사해 사람을 추가·갱신한다. 오류가 하나라도 있으면 아무것도 저장하지 않는다 |
 | FR-ADM-03 | 명단 검사: 필수 열 `person_id,role,name,title,lab,group`(lab·group **값**은 builder만 필수 · master는 `assigned`에 `;` 구분 담당 코드) · 인코딩 UTF-8(BOM 허용) · 사번 열(`employee_id`·`emp_no`·`사번`·`사원번호`)은 **버림** · 이메일 열도 **버림** · 진단 값 열(`gap`·`current`·`required`·`evidence`·`score`·`level`·`p2a`)이 있으면 **멈춤** · 값에 사번 패턴이 있으면 멈춤 · ID 형식(builder: 설정 패턴, master `^MS-\d{2,3}$`, office `^OP-\d{2,3}$`) · Lab·그룹 코드는 설정에 있어야 함 · 중복 ID 금지 |
-| FR-ADM-04 | `issue <person_id>` — 새 접속 코드 발급(기존 코드 자동 폐기). 코드는 **화면에 한 번만** 출력 |
-| FR-ADM-05 | `issue-all --role builder --out <파일>` — 대상 전원 발급, 결과를 지정 파일(공유 폴더 밖 금지 경고)로. 감사 기록 1줄 |
-| FR-ADM-06 | `revoke <person_id>` · `deactivate <person_id>` |
-| FR-ADM-07 | `list` — 사람 목록(ID순) · 코드 발급 여부 · 마지막 로그인 날짜(시각 아님). 코드 원문은 없음 |
+| FR-ADM-04 | `set-credentials <person_id> --username ... --password-stdin` — 아이디·비밀번호 설정. 비밀번호는 표준 입력으로만 받고 해시만 저장 |
+| FR-ADM-05 | 비밀번호 일괄 발급·파일 내보내기는 제공하지 않는다 |
+| FR-ADM-06 | `deactivate <person_id>` — 비활성화·로그인 정보 삭제·세션 종료 |
+| FR-ADM-07 | `list` — 사람 목록(ID순) · 로그인 아이디 · 마지막 로그인 날짜(시각 아님). 비밀번호·해시는 없음 |
 | FR-ADM-08 | 모든 쓰기 명령은 `--actor`를 요구하고 감사 기록을 남긴다 |
-| FR-ADM-09 | 화면에서 사무국은 사람 목록 보기·코드 재발급·비활성화를 할 수 있다 (P3) |
+| FR-ADM-09 | 화면에서 사무국은 사람 목록 보기·로그인 정보 설정·비활성화를 할 수 있다 (P3) |
 
 ### 1.4 교육 자료 (MAT) — P2
 
@@ -106,7 +106,6 @@ ID 규칙: `FR-<영역>-<번호>` 기능 · `NFR-<번호>` 비기능. 테스트�
 | FR-EXT-09 | `notifications` | 본인에게만 공간별 새 글 수·내 글 새 댓글 수를 보인다(사람·공간당 마지막 확인 시각만 저장) | P4.5 |
 | FR-EXT-03 | `events` | 설정의 일정·세션을 날짜순으로 보인다 | P4.6 |
 | FR-EXT-04 | `digest` | 읽기 가능 공간의 최근 글을 최신순으로 모아 보인다(사람별 묶음 금지) | P4.6 |
-| FR-EXT-05 | `inviteText` | 코드 발급 시 복사용 안내 문안을 만든다(발송·저장 없음) | P4.6 |
 | FR-EXT-08b | `materialThreads` | 공개 자료마다 쪽 번호를 지정할 수 있는 질문 스레드를 연다 | P4.6 |
 | FR-EXT-10 | `bookmarks` | 본인 전용 글 저장함 | P4.6 |
 | FR-EXT-11 | `tags` | 설정 키워드 목록에서만 고르는 글 태그 · 태그 필터 | P4.6 |

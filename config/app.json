@@ -352,7 +352,6 @@
     "notifications": true,
     "events": true,
     "digest": true,
-    "inviteText": true,
     "materialThreads": true,
     "bookmarks": true,
     "tags": true,
@@ -384,9 +383,6 @@
       "note": "DT · AA 세션"
     }
   ],
-  "invite": {
-    "template": "{name}님, {community} 접속 안내입니다.\n주소: {url}\n접속 코드: {code}\n코드는 본인만 사용해 주세요. 잃어버리면 사무국에 재발급을 요청해 주세요."
-  },
   "tags": {
     "extra": [
       "Process",

@@ -25,7 +25,7 @@
 | 400 | `validation` | 입력 검사 실패 (`problems` 배열) |
 | 400 | `bad_request` | JSON 파싱 실패 · 필수 파라미터 없음 |
 | 401 | `login_required` | 세션 없음·만료 |
-| 401 | `bad_code` | 로그인 코드 틀림 |
+| 401 | `bad_credentials` | 아이디 또는 비밀번호 틀림 |
 | 403 | `forbidden` | 역할·공간 권한 없음 |
 | 403 | `bad_origin` | 출처 검사 실패 |
 | 404 | `not_found` | 없음 (권한 없는 숨김 자원 포함 — 존재를 숨긴다) |
@@ -51,7 +51,7 @@
 
 | 메서드·경로 | 권한 | 요청 | 응답 |
 |---|---|---|---|
-| `POST /api/auth/login` | 공개 | `{"code":"ABCD-EFGH-JKLM"}` | 200 `data:{id,name,role,menu}` + `Set-Cookie` · 401 `bad_code` · 429 |
+| `POST /api/auth/login` | 공개 | `{"username":"user.name","password":"..."}` | 200 `data:{id,name,role,menu}` + `Set-Cookie` · 401 `bad_credentials` · 429 |
 | `POST /api/auth/logout` | 로그인 | — | 200 (쿠키 삭제) |
 | `GET /api/me` | 로그인 | — | 200 `data:{id,name,title,role,lab,grp,menu,features:{qcardsClosed}}` |
 | `GET /api/config/public` | 공개 | — | 200 `data:{securityLabel, brand:{community,messages}, cohort:{name}, labs:[{code,name,groups}]}` — 비밀·사람 없음, 로그인 화면용 |
@@ -114,15 +114,15 @@ p001.webp … p033.webp
 
 | 메서드·경로 | 권한 | 내용 |
 |---|---|---|
-| `GET /api/admin/people` | office | ID순 · `items:[{id,role,name,title,lab,grp,active,hasCode,lastLoginDay}]` · 감사 `view_operator_screen` |
-| `POST /api/admin/people/:id/code` | office | 새 코드 발급 → `data:{code}` **한 번만** · 감사 `code_issue` |
-| `POST /api/admin/people/:id/deactivate` | office | `active=0` · 코드 폐기 · 세션 삭제 |
+| `GET /api/admin/people` | office | ID순 · `items:[{id,role,name,title,lab,grp,active,username,hasCredentials,lastLoginDay}]` · 감사 `view_operator_screen` |
+| `POST /api/admin/people/:id/credentials` | office | `{username,password}` 설정 · 비밀번호 미응답 · 기존 세션 삭제 · 감사 `credentials_set` |
+| `POST /api/admin/people/:id/deactivate` | office | `active=0` · 로그인 정보·세션 삭제 |
 | `GET /api/admin/audit` | office | `?page=` 최신순 · 감사 `view_operator_screen` |
 | `GET /api/admin/stats` | office | 건수만: 사람(역할별)·자료·카드(세션·Lab별)·글(공간별) — **사람별 표 없음** |
 
 ## 8. 감사 기록 동작 이름
 
-`login_fail_limited` · `code_issue` · `code_revoke` · `person_deactivate` · `roster_import` · `material_upload` · `material_status` · `qcard_create` · `qcard_edit` · `qcard_withdraw` · `qcard_status` · `qcard_select` · `export` · `setting_change` · `post_create` · `post_edit` · `post_delete` · `post_hide` · `post_restore` · `view_operator_screen` · `migrate` · `backup` · `import_legacy`
+`login_fail_limited` · `credentials_set` · `person_deactivate` · `roster_import` · `material_upload` · `material_status` · `qcard_create` · `qcard_edit` · `qcard_withdraw` · `qcard_status` · `qcard_select` · `export` · `setting_change` · `post_create` · `post_edit` · `post_delete` · `post_hide` · `post_restore` · `view_operator_screen` · `migrate` · `backup` · `import_legacy`
 
 확장 기능(9절): `post_pin` · `post_unpin` · `post_accept` · `post_unaccept` · `qcard_answer` · `post_auto_hide` · `report_create` · `report_resolve` · `survey_create` · `survey_close`
 
@@ -153,7 +153,6 @@ p001.webp … p033.webp
 |---|---|---|---|
 | `events` | `GET /api/events` | 로그인 | `items:[{date,title,kind,note?}]` 날짜순 (설정 `events` + `sessions`) |
 | `digest` | `GET /api/feed/recent?days=7&tag=` | 로그인 | `items:[{id,spaceId,spaceLabel,title,author:{id,name},createdAt}]` 최신순 ≤50 · `counts:{<spaceId>:n}` |
-| `inviteText` | (`POST /api/admin/people/:id/code` 응답에 `inviteText` 추가) | office | 저장하지 않음 |
 | `materialThreads` | `GET /api/materials/:id/threads` | 로그인 | 그 자료의 `material_qa` 글 목록(`page` 포함) · 비공개 자료 404 |
 | `materialThreads` | `POST /api/materials/:id/threads` `{"title","body","page"?}` | 로그인 | 201 · `page` 1..pages · 본문 검사 동일 |
 | `bookmarks` | `GET /api/me/bookmarks` · `PUT /api/me/bookmarks/:postId` · `DELETE …/:postId` | 로그인 | 읽기 권한 없는 글 PUT 404 |

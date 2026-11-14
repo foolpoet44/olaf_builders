@@ -1,6 +1,6 @@
 // 서버와 테스트가 함께 쓰는 조립 단계 (docs/02_ARCHITECTURE.md 3절 1~6)
 import fs from 'node:fs';
-import { loadConfig, createSettings, SCHEMA4_FEATURES, ConfigError } from './config.js';
+import { loadConfig, createSettings, SCHEMA5_FEATURES, ConfigError } from './config.js';
 import { openDb, migrate, latestVersion } from './db.js';
 import { loadOrCreateSecrets } from './secrets.js';
 import { makeAudit } from './repo/audit.js';
@@ -25,17 +25,17 @@ export function bootstrap(env, opt = {}) {
   const db = openDb(opt.dbFile ?? `${env.dataDir}/olaf.db`);
   const mig = migrate(db, { backupDir: env.backupDir, now: clock.now() });
   const schemaVersion = latestVersion();
-  const on = SCHEMA4_FEATURES.filter((k) => cfg.features?.[k]);
-  if (on.length && schemaVersion < 4) {
+  const on = SCHEMA5_FEATURES.filter((k) => cfg.features?.[k]);
+  if (on.length && schemaVersion < 5) {
     db.close();
-    throw new ConfigError(`features ${on.join(', ')} 은(는) 스키마 004 가 필요합니다 (결정 B8·B9 후 004_optional.sql 포함)`);
+    throw new ConfigError(`features ${on.join(', ')} 은(는) 스키마 005 가 필요합니다 (결정 B8·B9 후 005_optional.sql 포함)`);
   }
 
   const settings = createSettings(cfg, env.configFile);
   const audit = makeAudit(db, clock);
   if (mig.to !== mig.from) audit('SYSTEM', 'migrate', `v${mig.from}->v${mig.to}`);
   // hooks: 뒤 단계·확장 모듈이 기존 응답에 칸을 붙이거나 저장 뒤 동작을 더하는 지점 (docs/02 7-1절)
-  const hooks = { me: [], codeIssue: [], stats: [], postSaved: [], postListItem: [], postDetail: [], spaceItem: [], qcardItem: [], postsList: [] };
+  const hooks = { me: [], stats: [], postSaved: [], postListItem: [], postDetail: [], spaceItem: [], qcardItem: [], postsList: [] };
   const deps = { env, settings, db, secrets, clock, audit, schemaVersion, apiRoutes, hooks };
   seed(deps);
   const app = createApp(deps);

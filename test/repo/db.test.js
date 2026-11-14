@@ -45,6 +45,28 @@ test('스키마를 올리기 전에 pre-migrate 백업을 만든다', () => {
   db.close();
 });
 
+test('v3 → v4 인증 전환: 접속 코드 제거 · credentials 생성 · 세션 초기화', () => {
+  const dir = tmpDir();
+  const oldSchema = path.join(dir, 'schema-v3');
+  fs.mkdirSync(oldSchema);
+  for (const name of ['001_init.sql', '002_community_plus.sql', '003_community_more.sql']) {
+    fs.copyFileSync(path.join(process.cwd(), 'src', 'schema', name), path.join(oldSchema, name));
+  }
+  const db = openDb(path.join(dir, 'olaf.db'));
+  migrate(db, { dir: oldSchema });
+  db.exec("INSERT INTO people VALUES('OP-01','office','사무국','',NULL,NULL,'[]',NULL,1,'t','t')");
+  db.exec("INSERT INTO access_codes(person_id,code_hash,salt,lookup,created_at,created_by) VALUES('OP-01','hash','salt','lookup','t','OP-01')");
+  db.exec("INSERT INTO sessions VALUES('token','OP-01','office','t','2999-01-01T00:00:00Z')");
+  const result = migrate(db, { backupDir: path.join(dir, 'backups') });
+  assert.equal(result.from, 3);
+  assert.equal(result.to, 4);
+  assert.ok(result.backup);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name='access_codes'").get().n, 0);
+  assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name='credentials'").get().n, 1);
+  assert.equal(db.prepare('SELECT COUNT(*) n FROM sessions').get().n, 0);
+  db.close();
+});
+
 test('트리거: audit_log 수정·삭제 불가', () => {
   const db = fresh();
   db.exec("INSERT INTO audit_log(at,actor,action) VALUES('t','OP-01','x')");

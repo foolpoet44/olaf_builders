@@ -99,8 +99,8 @@ src/
       └─ helpful.js  surveys.js                                                    (조건부)
    (확장용 middleware/feature.js · domain/ext/*.js · repo/ext/*.js 같은 규칙으로 추가)
 tools/
-├─ admin.js             명령줄: bootstrap · import-roster · issue · issue-all · revoke · deactivate · list
-├─ import-legacy.js     (선택) 기존 데이터 1회 가져오기
+├─ admin.js             명령줄: bootstrap · import-roster · set-credentials · deactivate · list
+├─ import-legacy.js     기존 질문 카드·감사 CSV 검증/가져오기/스냅샷
 ├─ check.js             점검: /healthz·/readyz·DB 무결성(PRAGMA integrity_check)
 └─ render-pdf/          사무국 PC 전용 PDF→webp 꾸러미 (서버 반입 안 함 · 외부 도구 의존 허용)
 ```
@@ -146,7 +146,7 @@ SPA fallback 없음 — 화면마다 실제 파일. 없는 파일은 `public/404
 |---|---|
 | `src/app.js` | `registerExtensions(app, deps)` 한 줄 (P4.5에서 추가) |
 | `src/schema/` | `002`·`003`(·`004`) 파일 추가 — 기존 파일 수정 없음 |
-| 기존 응답에 칸 추가 | `GET /api/spaces`(`template`), 글 목록(`pinned`·`solved`·`tags`), `GET /api/qcards/mine`·사무국 카드 목록(`answerPostId`), 코드 발급(`inviteText`), `/api/me`(`features`) — **칸 추가만**, 기존 칸 의미 변경 없음. 각 칸은 확장 모듈이 제공하는 `decorate*` 함수로 붙이고 기능이 꺼지면 붙이지 않는다 |
+| 기존 응답에 칸 추가 | `GET /api/spaces`(`template`), 글 목록(`pinned`·`solved`·`tags`), `GET /api/qcards/mine`·사무국 카드 목록(`answerPostId`), `/api/me`(`features`) — **칸 추가만**, 기존 칸 의미 변경 없음. 각 칸은 확장 모듈이 제공하는 `decorate*` 함수로 붙이고 기능이 꺼지면 붙이지 않는다 |
 
 글 작성·수정 시 `tags`처럼 확장이 받는 입력은 `routes/board.js`가 확장 훅(`hooks.onPostSaved(tx, post, input)`)을 한 번 부르는 방식으로 처리한다. 훅이 없거나 기능이 꺼지면 아무것도 하지 않는다.
 자동 숨김(신고)은 기존 `repo/posts.hide()`를 그대로 부른다 — 숨김 규칙을 두 곳에 두지 않는다.

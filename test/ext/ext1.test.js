@@ -123,7 +123,7 @@ test('FR-EXT-09 알림: 남의 새 글만 · seen 뒤 0 · 권한 밖 공간 없
 });
 
 test('FR-EXT-00 모든 확장 기능 끔 → 확장 경로 404 · 기존 응답에 확장 칸 없음', async () => {
-  const off = Object.fromEntries(['templates', 'directory', 'pin', 'accept', 'qcardAnswer', 'notifications', 'events', 'digest', 'inviteText', 'materialThreads', 'bookmarks', 'tags', 'reports', 'helpful', 'surveys'].map((k) => [k, false]));
+  const off = Object.fromEntries(['templates', 'directory', 'pin', 'accept', 'qcardAnswer', 'notifications', 'events', 'digest', 'materialThreads', 'bookmarks', 'tags', 'reports', 'helpful', 'surveys'].map((k) => [k, false]));
   const t2 = await mk({ settingsFile: { features: off } });
   const s2 = seedPeople(t2);
   const [x1, a] = await Promise.all([s2.login('TEST-001'), s2.login('OP-01')]);

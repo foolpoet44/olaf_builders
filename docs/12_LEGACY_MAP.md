@@ -49,25 +49,17 @@
 | `data/private` 정션 구조 | 공유 폴더 표준 경로로 대체 |
 | `docs/runbooks/local_server_hosting.md` · `db_migration_local.md` | 이 패키지 `docs/08`로 대체 |
 
-## 4. 기존 데이터 가져오기 (선택 · 결정 B6)
+## 4. 기존 데이터 가져오기 (결정 B6)
 
-원점 재시작이 기본이다. 가져오기로 결정하면 아래만 한다.
+2026-11-14 확정된 B6에 따라 아래 데이터만 검증 후 가져온다.
 
 | 데이터 | 출처 | 방법 |
 |---|---|---|
-| 사람 (32명 + Master + 사무국) | 사무국 PC 명단 엑셀 | 새 명단 CSV 형식(`docs/01` FR-ADM-03)으로 정리 → `tools/admin.js import-roster`. **ID는 기존 질문 카드의 작성자 ID와 맞춘다**(기존 STATUS: 운영 DB는 `T-<그룹>-<순번>`, 엑셀은 `T-01~T-32` — 불일치 주의) |
-| 질문 카드 44장 | Neon 콘솔 SQL Editor에서 `qcards`·`qcard_versions`를 JSON으로 내보내기(읽기만) | `tools/import-legacy.js qcards <json> --actor OP-01 --dry-run` → 빈 `qcards` 표에만 · 각 카드 최신판만 판 1로 · 상태(`followup` 등) 유지 · 감사 `import_legacy` 1줄 |
+| 사람 | 질문 카드 CSV의 케이스 ID·작성자 표시 정보 | 케이스 ID에서 Lab·그룹을 검증해 builder로 추가하거나 같은 ID를 갱신 |
+| 질문 카드 44장 | `question30_261022 1.csv` | `tools/import-legacy.js all <qcards.csv> <audit.csv> --actor OP-01 --dry-run` 검증 후 적용 · 각 카드 최신판을 판 1로 저장 · `card_uid`로 중복 방지 |
 | 교육 자료 5건 | 사무국 PC의 원본 PDF | `tools/render-pdf`로 꾸러미 재생성 → 사무국 화면 업로드 (DB의 이미지 추출보다 단순) · 강사 동의(D2) 확인 후 공개 |
-| 감사 기록 | Neon `audit_log` | 가져오지 않는다. 내보낸 파일을 `backups\legacy-audit-<날짜>.json`으로 보관만 |
+| 감사 기록 24건 | `olaf_qcard_261111 1.csv` | 기존 시각·행위자·동작·대상·결과를 append-only 감사 표에 중복 없이 추가 |
 
 가져오기 뒤 Neon·Upstash·Vercel 정리 시점은 사무국 결정(D1·D6). 사내 앱 개통 확인 전에는 지우지 않는다.
 
-`import-legacy.js` 입력 JSON 형식(내보내기 SQL은 도구 README에 둔다):
-
-```json
-{ "qcards": [ { "legacy_id": 1, "author_id": "T-PA1-01", "session": "DT", "status": "followup",
-               "created_at": "2026-10-21T09:00:00Z",
-               "latest": { "format": "template", "situation": "…", "constraint": "…", "ask": "…" } } ] }
-```
-
-검사: `author_id`가 `people`에 있어야 함 · 세션 코드 존재 · 본문은 개인정보 검사(걸리면 그 카드만 보고하고 전체 중단).
+검사: 케이스 ID에서 유효한 Lab·그룹을 얻을 수 있어야 함 · 세션 코드 존재 · 본문 개인정보 검사 · 전체 트랜잭션 적용. `--snapshot data/legacy-content.json`은 비밀번호 해시·세션·접속 기록을 제외한 재현용 콘텐츠만 기록한다.

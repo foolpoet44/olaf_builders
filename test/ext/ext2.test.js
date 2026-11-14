@@ -1,4 +1,4 @@
-// P4.6 확장 2차 — FR-EXT-03·04·05·08b·10·11·12
+// P4.6 확장 2차 — FR-EXT-03·04·08b·10·11·12
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { makeApp } from '../helpers.js';
@@ -44,14 +44,6 @@ test('FR-EXT-04 이번 주 새 글: 읽기 가능 공간만 · 최신순 · days
   assert.deepEqual(d.counts, { master_qa: 1, 'lab_lounge/PA': 1 });
   assert.equal((await x1.get('/api/feed/recent?days=999')).body.data.days, 30);
   assert.equal((await x1.get('/api/feed/recent?days=30')).body.data.items.length, 3);
-});
-
-test('FR-EXT-05 코드 발급 응답에 안내 문안 · 저장하지 않음', async () => {
-  const r = await admin.post('/api/admin/people/TEST-004/code');
-  assert.match(r.body.data.inviteText, /^차카타님, /);
-  assert.ok(r.body.data.inviteText.includes(r.body.data.code));
-  assert.ok(r.body.data.inviteText.includes('<사무국이 안내할 주소>'));
-  assert.equal(t.db.prepare("SELECT COUNT(*) n FROM audit_log WHERE target LIKE ? OR result LIKE ?").get(`%${r.body.data.code}%`, `%${r.body.data.code}%`).n, 0);
 });
 
 test('FR-EXT-08b 자료 질문 스레드: 공개 자료만 · 쪽 범위 · material_qa 에서도 보임 · 상세 ref', async () => {
@@ -150,7 +142,7 @@ test('FR-EXT-12 하루 신고 상한 429', async () => {
 });
 
 test('P4.6 기능 끔 → 경로 404 · 응답에 칸 없음', async () => {
-  const off = Object.fromEntries(['events', 'digest', 'inviteText', 'materialThreads', 'bookmarks', 'tags', 'reports'].map((k) => [k, false]));
+  const off = Object.fromEntries(['events', 'digest', 'materialThreads', 'bookmarks', 'tags', 'reports'].map((k) => [k, false]));
   const t2 = await mk({ settingsFile: { features: off } });
   const s2 = seedPeople(t2);
   const [x1, a] = await Promise.all([s2.login('TEST-001'), s2.login('OP-01')]);
@@ -161,6 +153,5 @@ test('P4.6 기능 끔 → 경로 404 · 응답에 칸 없음', async () => {
   const d = (await x1.get(`/api/posts/${id}`)).body.data.post;
   assert.ok(!('tags' in d) && !('bookmarked' in d));
   assert.equal(t2.db.prepare('SELECT COUNT(*) n FROM post_tags').get().n, 0);
-  assert.ok(!('inviteText' in (await a.post('/api/admin/people/TEST-002/code')).body.data));
   assert.ok(!('openReports' in (await a.get('/api/me')).body.data));
 });

@@ -8,15 +8,15 @@ export const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 export const PROTECTED_PORTS = [80, 443, 1234, 3389, 8080, 8081];
 export const OVERRIDE_KEYS = [
   'configVersion', 'qcards', 'auth', 'backup', 'logs', 'materials', 'visibility', 'sessions', 'brand', 'meta',
-  'site', 'features', 'events', 'directory', 'qcardAnswer', 'notifications', 'digest', 'invite', 'tags',
+  'site', 'features', 'events', 'directory', 'qcardAnswer', 'notifications', 'digest', 'tags',
   'moderation', 'surveys',
 ];
 export const FEATURE_KEYS = [
-  'templates', 'directory', 'pin', 'accept', 'qcardAnswer', 'notifications', 'events', 'digest', 'inviteText',
+  'templates', 'directory', 'pin', 'accept', 'qcardAnswer', 'notifications', 'events', 'digest',
   'materialThreads', 'bookmarks', 'tags', 'reports', 'helpful', 'surveys',
 ];
 // 이 기능들은 004 스키마가 필요하다
-export const SCHEMA4_FEATURES = ['helpful', 'surveys'];
+export const SCHEMA5_FEATURES = ['helpful', 'surveys'];
 
 export class ConfigError extends Error {}
 
@@ -116,7 +116,6 @@ export function validateConfig(c) {
     need(/^\d{4}-\d{2}-\d{2}$/.test(e.date ?? ''), 'events[].date must be YYYY-MM-DD');
     need(['launch', 'lab', 'session', 'review', 'demo', 'other'].includes(e.kind), 'events[].kind invalid');
   }
-  if (c.invite) need(typeof c.invite.template === 'string' && c.invite.template.includes('{code}'), 'invite.template must include {code}');
   if (c.tags) {
     const all = [...(c.labs ?? []).flatMap((l) => l.keywords ?? []), ...(c.tags.extra ?? [])];
     need(new Set(all).size === all.length, 'tags must be unique across labs[].keywords and tags.extra');

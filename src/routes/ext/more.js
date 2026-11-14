@@ -1,10 +1,9 @@
-// P4.6 확장 2차 — events · digest · inviteText · materialThreads · bookmarks · tags · reports (docs/13 3절)
+// P4.6 확장 2차 — events · digest · materialThreads · bookmarks · tags · reports (docs/13 3절)
 // 기능 하나당 함수 하나. 공통 접점은 deps.hooks 와 featureGate 뿐.
 import { requireLogin } from '../../middleware/session.js';
 import { featureGate } from '../../middleware/feature.js';
 import { checkPost } from '../../domain/board.js';
 import { privacyProblems } from '../../domain/privacy.js';
-import { inviteText as composeInvite } from '../../domain/invite.js';
 import { createPost, listPosts } from '../../repo/posts.js';
 import { getMaterial } from '../../repo/materials.js';
 import { ok, E, intParam } from '../../lib/http.js';
@@ -47,13 +46,6 @@ export function digest(api, deps, key) {
       return o;
     });
     ok(res, { items, counts, days });
-  });
-}
-
-/** FR-EXT-05 코드 안내 문안 — 응답에만 · 저장·발송 없음 */
-export function inviteText(api, deps, key) {
-  deps.hooks.codeIssue.push((data, person) => {
-    if (deps.settings.feature(key)) data.inviteText = composeInvite(deps.settings.cfg, person, data.code);
   });
 }
 

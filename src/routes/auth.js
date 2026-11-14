@@ -1,6 +1,6 @@
 // /api/auth/* · /api/me · /api/config/public (docs/04_API_SPEC.md 3절)
-import { normalizeCode, ipBucket, sessionCookie } from '../auth.js';
-import { findByCode, createSession, deleteSession, rateCount, rateHit } from '../repo/people.js';
+import { normalizeUsername, ipBucket, sessionCookie } from '../auth.js';
+import { findByCredentials, createSession, deleteSession, rateCount, rateHit } from '../repo/people.js';
 import { ok, E, wrap } from '../lib/http.js';
 import { requireLogin } from '../middleware/session.js';
 
@@ -27,11 +27,12 @@ export function authRoutes(api, deps) {
       if (cnt.n === maxFailures) { deps.audit('SYSTEM', 'login_fail_limited', ''); rateHit(db, 'auth', bucket, clock); }
       throw E.rate(retry);
     }
-    const code = normalizeCode(req.body?.code);
-    const person = code ? findByCode(db, code, secrets.sessionKey) : null;
+    const username = normalizeUsername(req.body?.username);
+    const password = typeof req.body?.password === 'string' ? req.body.password : '';
+    const person = username ? findByCredentials(db, username, password) : null;
     if (!person) {
       rateHit(db, 'auth', bucket, clock);
-      return res.status(401).json({ ok: false, error: { code: 'bad_code', message: '코드를 확인해 주세요' } });
+      return res.status(401).json({ ok: false, error: { code: 'bad_credentials', message: '아이디 또는 비밀번호를 확인해 주세요' } });
     }
     const hours = person.role === 'office' ? cfg.auth.officeSessionHours : cfg.auth.sessionHours;
     const s = createSession(db, person, hours, clock);

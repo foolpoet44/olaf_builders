@@ -9,7 +9,7 @@
 |---|---|---|
 | Builder (참여자) | 32명 | 교육 자료 열람 · 질문 카드 작성 · 커뮤니티 글·댓글 |
 | Master (코치) | 수 명 | 담당 Lab 공간 읽기·쓰기 · Master Q&A 답변 |
-| 사무국 (office) | 1~3명 | 명단·코드 발급 · 자료 올리기/내리기 · 질문 카드 취합 · 공지 · 숨김 |
+| 사무국 (office) | 1~3명 | 명단·로그인 관리 · 자료 올리기/내리기 · 질문 카드 취합 · 공지 · 숨김 |
 
 동시 접속은 수십 명 이하. 이 규모에서는 SQLite 파일 하나와 Node 프로세스 하나로 충분하다.
 
@@ -55,7 +55,7 @@
 | 케이스ID | Builder를 가리키는 키. selection_agent C29 파일 기준. C29 확정 전에는 임시 ID(`T-01` 등) |
 | 내부 번호 | Master `MS-01`, 사무국 `OP-01` 형식 |
 | Lab / 그룹 | PA(Physical AI: PA-1~3) · AA(Agentic AI: AA-1~2) · DT(Digital Twin: DT-1~2) |
-| 접속 코드 | 사무국이 1인 1개 발급하는 로그인 코드. 해시만 저장 |
+| 로그인 자격증명 | 사무국이 사용자명과 비밀번호를 설정한다. 비밀번호는 scrypt 해시만 저장 |
 | 판 (version) | 글·카드의 수정 이력 한 단위. 화면은 최신판을 보인다 |
 | 릴리스 | `C:\apps\olaf-builders\releases\<YYYYMMDD-NN>\` 한 폴더. 실행 중 덮어쓰지 않는다 |
 | 공유 폴더 | `C:\ProgramData\PRI\olaf-builders\` — 설정·데이터·업로드·로그·백업 |

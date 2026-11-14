@@ -43,10 +43,6 @@ test('알 수 없는 features 키 거부', () => {
   assert.throws(() => loadConfig({ configFile: writeOver({ features: { chat: true } }) }), /features.chat unknown/);
 });
 
-test('invite.template 에 {code} 가 없으면 거부', () => {
-  assert.throws(() => loadConfig({ configFile: writeOver({ invite: { template: 'hello' } }) }), /invite.template/);
-});
-
 test('운영 모드에서 필수 환경변수 없으면 거부', () => {
   assert.throws(() => resolveEnv({ NODE_ENV: 'production' }), /APP_DATA_DIR/);
 });

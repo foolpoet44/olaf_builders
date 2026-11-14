@@ -26,13 +26,13 @@
 
 | 파일 | 단계 | 권한 | 주요 요소 |
 |---|---|---|---|
-| `login.html` | P1 | 공개 | 코드 입력 1칸(`XXXX-XXXX-XXXX` 자동 하이픈) · 로그인 버튼 · 오류 문구 · 429면 남은 시간 |
+| `login.html` | P1 | 공개 | 아이디·비밀번호 입력 · 로그인 버튼 · 오류 문구 · 429면 남은 시간 |
 | `index.html` (포털) | P1 | 로그인 | 인사(성명·역할) · 역할별 메뉴 카드 · 로그아웃 · 브랜드 메시지 |
 | `materials.html` | P2 | 로그인 | 목록(세션별 묶음) → 뷰어: 쪽 이미지 1장 · ←/→ 키 · 쪽 번호 입력 · 확대(맞춤/100%) |
 | `qcard.html` | P3 | builder | 세션 선택 · 방식 탭(template/free) · 입력칸별 글자 수 · **실시간 낭독 문장 미리보기와 예상 초** · 검사 결과 목록 · 내 카드 목록(수정·철회) · 마감이면 안내만 |
 | `board.html` | P4 | 로그인 | 왼쪽 공간 목록 · 가운데 글 목록(검색·페이지) · 글 보기(최신판·"수정됨"·댓글) · 쓰기/수정 폼 |
 | `admin/index.html` | P1 | office | 사무국 메뉴 · 건수 요약(`/api/admin/stats`) |
-| `admin/people.html` | P3 | office | 사람 표(ID순) · 코드 재발급(모달에 1회 표시 + 복사 버튼) · 비활성화 |
+| `admin/people.html` | P3 | office | 사람 표(ID순) · 로그인 아이디/비밀번호 설정 · 비활성화 |
 | `admin/materials.html` | P2 | office | 꾸러미 업로드 · 자료 표(상태 변경·열람 건수) |
 | `admin/qcards.html` | P3 | office | 필터(세션·Lab·상태) · 표 · 한 장 크게 보기(←/→ · 글자 크게) · 상태 변경 · 대표/예비 선정 · CSV 내려받기 · 마감 스위치 |
 | `admin/audit.html` | P3 | office | 감사 기록 표(최신순) |
@@ -52,7 +52,6 @@
 | `index.html` · `board.html` | P4.5 | `notifications` | 메뉴 카드·공간 목록 숫자 배지 · "내 글 소식 n" · 공간 열면 `POST /api/me/seen` |
 | `events.html` (새 파일) · `index.html` | P4.6 | `events` | 월별 목록 · 포털 "다가오는 일정 3개" |
 | `index.html` · `board.html?view=recent` | P4.6 | `digest` | 포털 "이번 주 새 글" 5건 · 전체 보기 |
-| `admin/people.html` 코드 모달 | P4.6 | `inviteText` | 안내 문안 + "복사" 버튼 (코드 포함 · 닫으면 사라짐) |
 | `materials.html` 뷰어 | P4.6 | `materialThreads` | 오른쪽 접이식 패널: 이 자료 질문 · "이 쪽에 질문" |
 | `board.html` · `bookmarks.html`(새 파일) | P4.6 | `bookmarks` | 글 보기 "저장" 토글 · 내 저장함 목록 |
 | `board.html` | P4.6 | `tags` | 글 폼 태그 선택(체크 목록 · Lab별 묶음) · 글에 태그 칩 · 칩 누르면 `?tag=` 필터 |

@@ -30,18 +30,16 @@ CREATE TABLE people (
   updated_at  TEXT NOT NULL
 );
 
--- 접속 코드 (원문 저장 안 함) -------------------------------------------
-CREATE TABLE access_codes (
-  id          INTEGER PRIMARY KEY,
-  person_id   TEXT NOT NULL REFERENCES people(id),
-  code_hash   TEXT NOT NULL,                          -- scrypt(code, salt) hex
-  salt        TEXT NOT NULL,                          -- 16바이트 hex
-  lookup      TEXT NOT NULL UNIQUE,                   -- 코드 앞 4자 HMAC (빠른 조회 · 아래 설명)
-  created_at  TEXT NOT NULL,
-  created_by  TEXT NOT NULL,
-  revoked_at  TEXT
+-- 로그인 자격증명 (004에서 access_codes를 대체) --------------------------
+CREATE TABLE credentials (
+  person_id      TEXT PRIMARY KEY REFERENCES people(id),
+  username       TEXT NOT NULL UNIQUE COLLATE NOCASE,
+  password_hash  TEXT NOT NULL,
+  salt           TEXT NOT NULL,
+  created_at     TEXT NOT NULL,
+  updated_at     TEXT NOT NULL,
+  updated_by     TEXT NOT NULL
 );
-CREATE INDEX access_codes_person ON access_codes(person_id);
 
 -- 세션 ------------------------------------------------------------------
 CREATE TABLE sessions (
@@ -255,7 +253,11 @@ CREATE TRIGGER reports_no_delete BEFORE DELETE ON reports BEGIN SELECT RAISE(ABO
 PRAGMA user_version = 3;
 ```
 
-### `src/schema/004_optional.sql` — 결정 B8·B9 승인 후에만
+### `src/schema/004_password_auth.sql`
+
+`access_codes`를 삭제하고 `credentials`를 만든다. 기존 세션은 모두 삭제해 새 로그인 방식으로 다시 인증하게 한다.
+
+### `src/schema-optional/005_optional.sql` — 결정 B8·B9 승인 후에만
 
 ```sql
 -- 도움됐어요 (FR-EXT-13) — 건수 표시용, 본인 취소 허용
@@ -293,19 +295,19 @@ CREATE TABLE survey_votes (                           -- person_id 는 1인 1회
 );
 CREATE TRIGGER surveys_no_delete BEFORE DELETE ON surveys BEGIN SELECT RAISE(ABORT,'surveys rows are never deleted'); END;
 
-PRAGMA user_version = 4;
+PRAGMA user_version = 5;
 ```
 
-> 2026-11-13 Node 24.19에서 001→002→003→004를 각각 트랜잭션으로 적용하고 제약(답변 글 1개·연결 대상 고정·신고 중복/삭제 차단)과 `integrity_check = ok`를 확인했다. 연결 PRAGMA(1절)는 트랜잭션 밖에서 연결 시 실행하고, 마이그레이션 파일에는 넣지 않는다.
+> 2026-11-14 Node 24.19에서 001→002→003→004→005를 각각 트랜잭션으로 적용하고 제약(답변 글 1개·연결 대상 고정·신고 중복/삭제 차단)과 `integrity_check = ok`를 확인했다. 연결 PRAGMA(1절)는 트랜잭션 밖에서 연결 시 실행하고, 마이그레이션 파일에는 넣지 않는다.
 >
 > 004를 적용하지 않은 DB에서 `features.helpful`·`features.surveys`를 켜면 **시작 거부**한다(`config.js`가 `user_version`과 기능 키를 대조).
 
-## 3. 접속 코드 형식과 조회
+## 3. 아이디·비밀번호
 
-- 코드: Crockford Base32 대문자 12자, 화면 표기 `XXXX-XXXX-XXXX`(입력 시 하이픈·공백·소문자 허용 → 정규화).
-- 저장: `lookup = HMAC-SHA256(secret, code[0:4])` 앞 16자, `code_hash = scrypt(code, salt, 32)`.
-  로그인 시 `lookup`으로 후보 1행을 찾고 `timingSafeEqual`로 비교. (`lookup` 충돌 시 재발급 — UNIQUE 제약)
-- 이유: 코드 전체 해시를 모든 행과 비교하는 비용을 피하면서 원문을 저장하지 않는다.
+- 아이디: 영문자로 시작하는 3~32자의 영문 소문자·숫자·점·밑줄·하이픈. 저장과 조회는 대소문자를 구분하지 않는다.
+- 비밀번호: 10~128자, 영문·숫자·특수문자를 모두 포함한다.
+- 저장: 개인별 16바이트 salt와 `scrypt(password, salt, 32)` 해시만 저장한다.
+- 검증: `timingSafeEqual`로 비교하며 API·로그·감사 기록에 비밀번호를 남기지 않는다.
 
 ## 4. 무결성 규칙 (앱 코드 + 트리거)
 
@@ -327,8 +329,8 @@ PRAGMA user_version = 4;
 1. 새 파일 `src/schema/00N_<이름>.sql`, 끝에 `PRAGMA user_version = N;`.
 2. 시작 시 `user_version < 최신`이면: **먼저 `backups\pre-migrate-v<현재>-<시각>.db`로 `VACUUM INTO`** → 각 파일을 트랜잭션으로 적용.
 3. `user_version > 코드가 아는 최신`이면 시작 중단(구 릴리스로 롤백했는데 DB만 새것인 경우 — 백업 복원 필요 안내).
-4. 칸 삭제·이름 변경은 하지 않는다(새 칸 추가 + 앱에서 옛 칸 무시).
-5. 코드가 아는 최신 버전 = 릴리스에 들어 있는 스키마 파일 중 가장 큰 번호. `004_optional.sql`은 기본 릴리스에 **포함하지 않고**, B8·B9 승인 후 그 파일을 추가한 릴리스에서만 적용된다.
+4. 원칙적으로 칸 삭제·이름 변경은 하지 않는다. 보안 모델 교체처럼 명시적으로 폐기하는 데이터는 백업과 전용 회귀 테스트를 갖춘 마이그레이션에서만 제거한다.
+5. 코드가 아는 최신 버전 = 릴리스에 들어 있는 스키마 파일 중 가장 큰 번호. `005_optional.sql`은 기본 릴리스에 **포함하지 않고**, B8·B9 승인 후 그 파일을 추가한 릴리스에서만 적용된다.
 
 ## 6. 백업과 복원
 

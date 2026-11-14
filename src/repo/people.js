@@ -1,7 +1,7 @@
-// 사람 · 접속 코드 · 세션 · 로그인 날짜 · 횟수 제한
+// 사람 · 로그인 자격증명 · 세션 · 로그인 날짜 · 횟수 제한
 import { tx } from '../db.js';
 import { isoNow } from '../lib/clock.js';
-import { newCode, newSalt, hashCode, codeLookup, verifyCode, newToken, tokenHash } from '../auth.js';
+import { newSalt, hashPassword, verifyPassword, normalizeUsername, passwordProblems, newToken, tokenHash } from '../auth.js';
 
 const rowToPerson = (r) => r && { ...r, assigned: JSON.parse(r.assigned || '[]'), active: r.active === 1 };
 
@@ -11,10 +11,16 @@ export function getPerson(db, id) {
 
 export function listPeople(db) {
   return db.prepare(`
-    SELECT p.*, EXISTS(SELECT 1 FROM access_codes c WHERE c.person_id = p.id AND c.revoked_at IS NULL) AS has_code,
-           l.day AS last_login_day
-    FROM people p LEFT JOIN last_login l ON l.person_id = p.id
-    ORDER BY p.id`).all().map((r) => ({ ...rowToPerson(r), hasCode: r.has_code === 1, lastLoginDay: r.last_login_day ?? null }));
+    SELECT p.*, c.username, (c.person_id IS NOT NULL) AS has_credentials, l.day AS last_login_day
+    FROM people p
+    LEFT JOIN credentials c ON c.person_id = p.id
+    LEFT JOIN last_login l ON l.person_id = p.id
+    ORDER BY p.id`).all().map((r) => ({
+      ...rowToPerson(r),
+      hasCredentials: r.has_credentials === 1,
+      username: r.username ?? null,
+      lastLoginDay: r.last_login_day ?? null,
+    }));
 }
 
 export const countOffice = (db) => db.prepare("SELECT COUNT(*) n FROM people WHERE role = 'office'").get().n;
@@ -36,32 +42,48 @@ export function upsertPerson(db, p, now) {
   return cur.role !== p.role ? 'role_changed' : 'updated';
 }
 
-/** 새 코드 발급 (기존 코드 폐기). 원문 코드를 한 번만 돌려준다. */
-export function issueCode(db, { personId, actor, key, clock }) {
+export class CredentialError extends Error {
+  constructor(problems) {
+    super(problems[0] ?? '로그인 정보를 확인해 주세요');
+    this.problems = problems;
+  }
+}
+
+/** 사용자명·비밀번호 설정. 기존 세션은 모두 종료한다. */
+export function setCredentials(db, { personId, username, password, actor, clock }) {
+  const normalized = normalizeUsername(username);
+  const problems = [];
+  if (!normalized) problems.push('아이디는 영문자로 시작하는 3~32자의 영문 소문자, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다');
+  problems.push(...passwordProblems(password));
+  if (problems.length) throw new CredentialError(problems);
+  const owner = db.prepare('SELECT person_id FROM credentials WHERE username = ? COLLATE NOCASE').get(normalized);
+  if (owner && owner.person_id !== personId) throw new CredentialError(['이미 사용 중인 아이디입니다']);
   return tx(db, () => {
     const now = isoNow(clock);
-    db.prepare('UPDATE access_codes SET revoked_at = ? WHERE person_id = ? AND revoked_at IS NULL').run(now, personId);
-    for (let attempt = 0; attempt < 8; attempt++) {
-      const code = newCode();
-      const lookup = codeLookup(code, key);
-      if (db.prepare('SELECT 1 FROM access_codes WHERE lookup = ?').get(lookup)) continue; // 앞 4자 충돌 → 다시
-      const salt = newSalt();
-      db.prepare('INSERT INTO access_codes (person_id, code_hash, salt, lookup, created_at, created_by) VALUES (?, ?, ?, ?, ?, ?)')
-        .run(personId, hashCode(code, salt), salt, lookup, now, actor);
-      return code;
-    }
-    throw new Error('code lookup collision');
+    const salt = newSalt();
+    db.prepare(`INSERT INTO credentials (person_id, username, password_hash, salt, created_at, updated_at, updated_by)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT(person_id) DO UPDATE SET
+        username=excluded.username, password_hash=excluded.password_hash, salt=excluded.salt,
+        updated_at=excluded.updated_at, updated_by=excluded.updated_by`)
+      .run(personId, normalized, hashPassword(password, salt), salt, now, now, actor);
+    db.prepare('DELETE FROM sessions WHERE person_id = ?').run(personId);
+    return normalized;
   });
 }
 
-export function revokeCodes(db, personId, now) {
-  return db.prepare('UPDATE access_codes SET revoked_at = ? WHERE person_id = ? AND revoked_at IS NULL').run(now, personId).changes;
+export function clearCredentials(db, personId) {
+  return tx(db, () => {
+    const changes = db.prepare('DELETE FROM credentials WHERE person_id = ?').run(personId).changes;
+    db.prepare('DELETE FROM sessions WHERE person_id = ?').run(personId);
+    return changes;
+  });
 }
 
 export function deactivate(db, personId, now) {
   return tx(db, () => {
     db.prepare('UPDATE people SET active = 0, updated_at = ? WHERE id = ?').run(now, personId);
-    revokeCodes(db, personId, now);
+    db.prepare('DELETE FROM credentials WHERE person_id = ?').run(personId);
     db.prepare('DELETE FROM sessions WHERE person_id = ?').run(personId);
     // 확장 기능의 개인 데이터 정리 (표가 있을 때만)
     for (const t of ['seen']) {
@@ -70,10 +92,12 @@ export function deactivate(db, personId, now) {
   });
 }
 
-/** 코드 확인 → 사람. 실패 null */
-export function findByCode(db, code, key) {
-  const row = db.prepare('SELECT * FROM access_codes WHERE lookup = ? AND revoked_at IS NULL').get(codeLookup(code, key));
-  if (!row || !verifyCode(code, row.salt, row.code_hash)) return null;
+/** 아이디·비밀번호 확인 → 사람. 실패 null */
+export function findByCredentials(db, username, password) {
+  const normalized = normalizeUsername(username);
+  if (!normalized || typeof password !== 'string') return null;
+  const row = db.prepare('SELECT * FROM credentials WHERE username = ? COLLATE NOCASE').get(normalized);
+  if (!row || !verifyPassword(password, row.salt, row.password_hash)) return null;
   const p = getPerson(db, row.person_id);
   return p && p.active ? p : null;
 }

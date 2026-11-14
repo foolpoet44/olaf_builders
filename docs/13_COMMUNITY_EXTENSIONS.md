@@ -34,13 +34,12 @@ export const featureGate = (key) => (req, res, next) =>
 | 9 | `notifications` | 앱 안 새 글·새 댓글 알림 | 002 표 | P4.5 | on |
 | 3 | `events` | 일정·여정 페이지 | 없음 | P4.6 | on |
 | 4 | `digest` | 이번 주 새 글 모아보기 | 없음 | P4.6 | on |
-| 5 | `inviteText` | 코드 안내 문안 생성 | 없음 | P4.6 | on |
 | 8b | `materialThreads` | 자료별 질문 스레드 | 002 칸(공용) | P4.6 | on |
 | 10 | `bookmarks` | 내 저장함 | 003 표 | P4.6 | on |
 | 11 | `tags` | 키워드 태그 | 003 표 | P4.6 | on |
 | 12 | `reports` | 신고·사무국 처리 | 003 표 | P4.6 | on |
-| 13 | `helpful` | "도움됐어요" (건수만) | 004 표 | P5-조건부 | **off** · 결정 B8 |
-| 14 | `surveys` | 사무국 간단 설문 | 004 표 | P5-조건부 | **off** · 결정 B9 |
+| 13 | `helpful` | "도움됐어요" (건수만) | 005 표 | P5-조건부 | **off** · 결정 B8 |
+| 14 | `surveys` | 사무국 간단 설문 | 005 표 | P5-조건부 | **off** · 결정 B9 |
 
 > 마이그레이션 002·003은 해당 단계에서 적용한다. 기능이 꺼져 있어도 표·칸은 존재해도 된다(빈 채로). 004는 B8 또는 B9 승인 후에만 만든다.
 
@@ -95,11 +94,6 @@ export const featureGate = (key) => (req, res, next) =>
 - `GET /api/feed/recent?days=7` (로그인, `days` 1~30) → 읽기 가능 공간의 `live` 글을 **작성 시각 최신순**, 최대 50건 + 공간별 건수.
 - 화면: 포털 "이번 주 새 글" 블록(5건) + `board.html?view=recent`.
 - 사람별 묶음·작성자 건수 표시 금지.
-
-### FR-EXT-05 코드 안내 문안 (`inviteText`)
-- 설정 `invite.template` (예: `"{name}님, {community} 접속 안내입니다.\n주소: {url}\n접속 코드: {code}\n코드는 본인만 사용해 주세요."`) · `site.publicBaseUrl`(운영값 · 없으면 `<사무국이 안내할 주소>`).
-- 코드 발급 응답(`POST /api/admin/people/:id/code`)과 `tools/admin.js issue`가 `inviteText`를 함께 돌려준다. 화면은 "복사" 버튼만.
-- **발송 기능 없음.** 문안은 저장하지 않는다(코드 원문이 들어 있으므로).
 
 ### FR-EXT-08b 자료별 질문 스레드 (`materialThreads`)
 - 공간 `material_qa`(설정 `spaces`에 추가 · 읽기 all · 쓰기 all · `acceptAnswers: true`).

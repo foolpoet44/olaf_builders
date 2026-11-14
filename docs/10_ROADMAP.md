@@ -21,11 +21,11 @@
 | 산출물 | 요구사항 |
 |---|---|
 | `repo/people,codes,sessions,rate,audit` · `middleware/session,require,origin` · `routes/auth,me` | FR-AUTH-01~08 |
-| `domain/roster.js` · `tools/admin.js`(bootstrap·import-roster·issue·issue-all·revoke·deactivate·list) | FR-ADM-01~08 |
+| `domain/roster.js` · `tools/admin.js`(bootstrap·import-roster·set-credentials·deactivate·list) | FR-ADM-01~08 |
 | `public/login.html` · `index.html` · `admin/index.html` · `assets/js/common.js` · Pretendard | FR-AUTH-07·08 |
 | `/api/config/public` · `/api/admin/stats` | — |
 
-**완료 기준:** 권한 자동 순회 테스트 통과 · 가짜 명단 10명 가져오기 → 코드 발급 → 세 역할 로그인 · 비활성화 즉시 차단.
+**완료 기준:** 권한 자동 순회 테스트 통과 · 가짜 명단 가져오기 → 아이디/비밀번호 설정 → 세 역할 로그인 · 비활성화 즉시 차단.
 
 ## P2 교육 자료 (1~2일)
 
@@ -45,7 +45,7 @@
 | `public/assets/js/shared/qcard-rules.js` · `domain/qcard.js` · `repo/qcards.js` · `routes/qcards.js` | FR-QC-01~12 |
 | `public/qcard.html` · `admin/qcards.html` · `admin/people.html` · `admin/audit.html` | FR-ADM-09 |
 | 마감 스위치 · 런타임 설정 저장소 | FR-QC-08 |
-| (선택·결정 B6) `tools/import-legacy.js` | `docs/12` 4절 |
+| (결정 B6) `tools/import-legacy.js` · 재현용 콘텐츠 스냅샷 | `docs/12` 4절 |
 
 **완료 기준:** 질문 카드 규칙 테스트 전부(기존 리포 Q 시리즈 대응) · CSV 내려받기 엑셀에서 한글 정상 · 마감 동작.
 
@@ -81,7 +81,7 @@
 
 | 산출물 | 요구사항 |
 |---|---|
-| `src/schema/004_optional.sql`(이 단계에서 처음 릴리스에 포함) · 도움됐어요 | FR-EXT-13 (B8) |
+| `src/schema-optional/005_optional.sql`(이 단계에서 처음 릴리스에 포함) · 도움됐어요 | FR-EXT-13 (B8) |
 | 사무국 간단 설문 · `surveys.html` · `admin/surveys.html` | FR-EXT-14 (B9) |
 
 ## P5 이후 (사무국 Q1·D3 결정 뒤)
