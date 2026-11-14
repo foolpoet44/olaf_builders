@@ -43,18 +43,36 @@ async function act(path, method, body) {
 
 function big(i) {
   let k = i;
-  const view = el('div');
+  const meta = el('div', { class: 'qcard-stage-meta' });
+  const sentence = el('p', { class: 'qcard-stage-sentence' });
+  const count = el('span', { class: 'qcard-stage-count' });
+  const previous = el('button', {}, '← 이전');
+  const next = el('button', {}, '다음 →');
+  let m;
+  const close = el('button', { class: 'qcard-stage-close', 'aria-label': '전체 화면 닫기', onclick: () => m.close() }, '×');
+  const view = el('div', { class: 'qcard-stage-shell' },
+    el('div', { class: 'qcard-stage-head' }, el('strong', {}, '질문 카드'), meta, close),
+    el('div', { class: 'qcard-stage-body' }, sentence),
+    el('div', { class: 'qcard-stage-foot' }, previous, count, next));
   const draw = () => {
     const c = items[k];
-    clear(view).append(el('div', { class: 'muted small' }, `${k + 1} / ${items.length} · 세션 ${c.session} · ${c.lab} · ${c.grp} · ${c.author.name}`),
-      el('div', { class: 'big-card pre' }, c.sentence),
-      el('div', { class: 'row end' }, el('button', { onclick: () => { k = Math.max(0, k - 1); draw(); } }, '←'), el('button', { onclick: () => { k = Math.min(items.length - 1, k + 1); draw(); } }, '→')));
+    meta.textContent = `세션 ${c.session} · ${c.lab} · ${c.grp} · ${c.author.name}`;
+    sentence.textContent = c.sentence;
+    count.textContent = `${k + 1} / ${items.length}`;
+    previous.disabled = k === 0;
+    next.disabled = k === items.length - 1;
   };
-  draw();
-  const m = modal(view, { onClose: () => document.removeEventListener('keydown', key) });
-  m.box.style.maxWidth = '960px';
-  const key = (e) => { if (e.key === 'ArrowLeft') { k = Math.max(0, k - 1); draw(); } if (e.key === 'ArrowRight') { k = Math.min(items.length - 1, k + 1); draw(); } if (e.key === 'Escape') m.close(); };
+  const move = (step) => { k = Math.max(0, Math.min(items.length - 1, k + step)); draw(); };
+  previous.addEventListener('click', () => move(-1));
+  next.addEventListener('click', () => move(1));
+  const key = (e) => { if (e.key === 'ArrowLeft') move(-1); if (e.key === 'ArrowRight') move(1); if (e.key === 'Escape') m.close(); };
+  m = modal(view, { onClose: () => { document.removeEventListener('keydown', key); document.body.classList.remove('modal-open'); } });
+  m.box.classList.add('qcard-fullscreen');
+  m.box.parentElement.classList.add('qcard-stage');
+  document.body.classList.add('modal-open');
   document.addEventListener('keydown', key);
+  draw();
+  close.focus();
 }
 
 function answer(c) {

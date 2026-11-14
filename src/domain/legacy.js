@@ -117,3 +117,41 @@ export function snapshotLegacyContent(parsed) {
     audit: parsed.entries,
   };
 }
+
+export function parseLegacySnapshot(text, cfg) {
+  let value;
+  try {
+    value = JSON.parse(String(text).replace(/^\uFEFF/, ''));
+  } catch {
+    return { people: [], cards: [], entries: [], problems: ['스냅샷 JSON 형식이 올바르지 않습니다'] };
+  }
+  const problems = [];
+  if (value?.formatVersion !== 1) problems.push('지원하지 않는 스냅샷 버전입니다');
+  for (const key of ['people', 'qcards', 'audit']) if (!Array.isArray(value?.[key])) problems.push(`${key} 배열이 없습니다`);
+  if (problems.length) return { people: [], cards: [], entries: [], problems };
+  const people = value.people.map((person) => ({ ...person, assigned: Array.isArray(person.assigned) ? person.assigned : [] }));
+  const peopleById = new Map(people.map((person) => [person.id, person]));
+  for (const person of people) {
+    const lab = cfg.labs.find((item) => item.code === person.lab);
+    if (!person.id || person.role !== 'builder' || !person.name || !lab?.groups.includes(person.grp)) {
+      problems.push(`작성자 정보가 올바르지 않습니다: ${person.id ?? '(없음)'}`);
+    }
+  }
+  const cards = value.qcards.map((card) => ({ ...card }));
+  for (const card of cards) {
+    if (!card.sourceId || !peopleById.has(card.authorId) || !cfg.sessions.some((item) => item.code === card.session) || !card.ask) {
+      problems.push(`질문 카드 정보가 올바르지 않습니다: ${card.sourceId ?? '(없음)'}`);
+    }
+    for (const problem of privacyProblems([card.situation, card.constraint, card.ask], cfg.privacy)) {
+      problems.push(`${card.sourceId}: ${problem}`);
+    }
+  }
+  if (new Set(cards.map((card) => card.sourceId)).size !== cards.length) problems.push('card_uid가 중복되었습니다');
+  const entries = value.audit.map((entry) => ({ ...entry }));
+  for (const entry of entries) {
+    if (!entry.sourceId || !entry.at || !entry.actor || !entry.action || Number.isNaN(Date.parse(entry.at))) {
+      problems.push(`감사 기록이 올바르지 않습니다: ${entry.sourceId ?? '(없음)'}`);
+    }
+  }
+  return { people, cards, entries, problems };
+}

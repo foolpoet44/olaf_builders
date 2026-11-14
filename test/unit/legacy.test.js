@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadConfig } from '../../src/config.js';
-import { parseWrappedCsv, parseLegacyQcardsCsv, parseLegacyAuditCsv } from '../../src/domain/legacy.js';
+import { parseWrappedCsv, parseLegacyQcardsCsv, parseLegacyAuditCsv, parseLegacySnapshot, snapshotLegacyContent } from '../../src/domain/legacy.js';
 
 const cfg = loadConfig({});
 const wrap = (lines) => lines.map((line) => `"${line.replaceAll('"', '""')}"`).join('\n');
@@ -27,4 +27,14 @@ test('감사 CSV를 정규화한다', () => {
   const parsed = parseLegacyAuditCsv(wrap(['id,at,actor_id,action,target,result,source_hash', '1,2026-10-21T00:00:00Z,OP-01,migrate,v1,ok,NULL']));
   assert.deepEqual(parsed.problems, []);
   assert.equal(parsed.entries[0].action, 'migrate');
+});
+
+test('콘텐츠 스냅샷을 다시 복원 입력으로 검증한다', () => {
+  const person = { id: 'T-PA-1-01', role: 'builder', name: '테스트', title: '책임', lab: 'PA', grp: 'PA-1', assigned: [], challenge: null };
+  const card = { sourceId: 'c-1', authorId: person.id, session: 'DT', status: 'registered', createdAt: '2026-10-21T00:00:00Z', format: 'template', situation: '현장 상황입니다', constraint: '데이터가 부족합니다', ask: '해결 방법이 있나요?', sentence: '문장', seconds: 1 };
+  const entry = { sourceId: '1', at: '2026-10-21T00:00:00Z', actor: 'OP-01', action: 'migrate', target: 'v1', result: 'ok', sourceHash: 'NULL' };
+  const text = JSON.stringify(snapshotLegacyContent({ people: [person], cards: [card], entries: [entry] }));
+  const parsed = parseLegacySnapshot(text, cfg);
+  assert.deepEqual(parsed.problems, []);
+  assert.equal(parsed.cards[0].sourceId, 'c-1');
 });

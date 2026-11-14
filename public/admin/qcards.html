@@ -10,7 +10,7 @@
 <body>
   <div class="sec-band">LGE Internal Use Only</div>
   <header class="topbar" id="top"></header>
-  <main>
+  <main class="wide qcard-admin">
     <div class="row">
       <h1 style="margin:0">질문 카드</h1>
       <span class="spacer"></span>
@@ -23,7 +23,9 @@
       <select id="f-lab"><option value="">전체 Lab</option></select>
       <select id="f-status"><option value="">전체 상태</option></select>
     </div>
-    <table style="margin-top:12px"><thead><tr><th>세션</th><th>Lab·그룹</th><th>작성자</th><th>낭독 문장</th><th>상태</th><th>선정</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    <div class="table-scroll qcard-table-wrap">
+      <table><thead><tr><th>세션</th><th>Lab·그룹</th><th>작성자</th><th>낭독 문장</th><th>상태</th><th>선정</th><th></th></tr></thead><tbody id="rows"></tbody></table>
+    </div>
   </main>
 </body>
 </html>

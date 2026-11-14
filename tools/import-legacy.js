@@ -3,8 +3,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveEnv } from '../src/config.js';
 import { tx } from '../src/db.js';
-import { parseLegacyQcardsCsv, parseLegacyAuditCsv, snapshotLegacyContent } from '../src/domain/legacy.js';
+import { parseLegacyQcardsCsv, parseLegacyAuditCsv, parseLegacySnapshot, snapshotLegacyContent } from '../src/domain/legacy.js';
 import { composeSentence, readSeconds } from '../src/domain/qcard.js';
+import { seedSessions } from '../src/repo/qcards.js';
 import { upsertPerson, getPerson } from '../src/repo/people.js';
 import { isoNow } from '../src/lib/clock.js';
 import { openContext } from './admin.js';
@@ -26,6 +27,7 @@ function parseArgs(argv) {
 function usage(message) {
   if (message) console.error(`[사용법] ${message}`);
   console.error('node tools/import-legacy.js all <qcards.csv> <audit.csv> --actor OP-01 [--dry-run] [--snapshot <json>]');
+  console.error('node tools/import-legacy.js snapshot <legacy-content.json> --actor OP-01 [--dry-run]');
   return 2;
 }
 
@@ -33,6 +35,7 @@ function insertContent(ctx, parsed, actor) {
   const { db, cfg, clock, audit } = ctx;
   const now = isoNow(clock);
   const counts = { peopleAdded: 0, peopleUpdated: 0, cardsAdded: 0, cardsSkipped: 0, auditAdded: 0, auditSkipped: 0 };
+  seedSessions(db, cfg.sessions);
   for (const person of parsed.people) {
     const result = upsertPerson(db, person, now);
     if (result === 'added') counts.peopleAdded++;
@@ -64,30 +67,34 @@ function insertContent(ctx, parsed, actor) {
 
 export function run(argv) {
   const { positional, flags } = parseArgs(argv);
-  if (positional[0] !== 'all' || positional.length !== 3) return usage();
+  const mode = positional[0];
+  if (!((mode === 'all' && positional.length === 3) || (mode === 'snapshot' && positional.length === 2))) return usage();
   if (!flags.actor) return usage('--actor가 필요합니다');
-  let qcardText;
-  let auditText;
+  let input;
   try {
-    qcardText = fs.readFileSync(positional[1], 'utf8');
-    auditText = fs.readFileSync(positional[2], 'utf8');
+    if (mode === 'all') input = [fs.readFileSync(positional[1], 'utf8'), fs.readFileSync(positional[2], 'utf8')];
+    else input = fs.readFileSync(positional[1], 'utf8');
   } catch (error) {
-    return usage(`CSV 파일을 읽을 수 없습니다: ${error.code}`);
+    return usage(`입력 파일을 읽을 수 없습니다: ${error.code}`);
   }
   const ctx = openContext(resolveEnv(process.env));
   try {
     const operator = getPerson(ctx.db, flags.actor);
     if (!operator || !operator.active || operator.role !== 'office') return usage('활성 사무국 --actor가 필요합니다');
-    const qcards = parseLegacyQcardsCsv(qcardText, ctx.cfg);
-    const audit = parseLegacyAuditCsv(auditText);
-    const problems = [...qcards.problems, ...audit.problems];
+    const parsed = mode === 'all'
+      ? (() => {
+        const qcards = parseLegacyQcardsCsv(input[0], ctx.cfg);
+        const audit = parseLegacyAuditCsv(input[1]);
+        return { ...qcards, ...audit, problems: [...qcards.problems, ...audit.problems] };
+      })()
+      : parseLegacySnapshot(input, ctx.cfg);
+    const problems = parsed.problems;
     if (problems.length) {
       console.error('[중단] 아무 데이터도 저장하지 않았습니다.');
       for (const problem of problems) console.error(`- ${problem}`);
       return 1;
     }
-    const parsed = { ...qcards, ...audit };
-    if (flags.snapshot) {
+    if (mode === 'all' && flags.snapshot) {
       const snapshot = `${JSON.stringify(snapshotLegacyContent(parsed), null, 2)}\n`;
       fs.mkdirSync(path.dirname(path.resolve(flags.snapshot)), { recursive: true });
       fs.writeFileSync(flags.snapshot, snapshot, 'utf8');

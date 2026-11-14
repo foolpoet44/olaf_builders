@@ -33,6 +33,7 @@ h1 { font-size: 1.5rem; } h2 { font-size: 1.2rem; } h3 { font-size: 1.05rem; }
 
 main { max-width: 1080px; margin: 0 auto; padding: 24px; }
 main.narrow { max-width: 440px; }
+main.wide { max-width: none; }
 
 /* 기본 요소 */
 .card { border: 1px solid var(--gray-200); border-radius: var(--radius); padding: 18px; background: #fff; }
@@ -65,6 +66,7 @@ label { display: block; font-weight: 600; margin: 12px 0 4px; font-size: .92rem;
 table { width: 100%; border-collapse: collapse; font-size: .9rem; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--gray-200); vertical-align: top; }
 th { background: var(--gray-50); font-weight: 600; }
+.table-scroll { width: 100%; overflow-x: auto; }
 
 .msg { padding: 10px 12px; border-radius: 6px; margin: 10px 0; font-size: .9rem; }
 .msg.err { background: #fef2f2; color: var(--err); }
@@ -92,10 +94,30 @@ th { background: var(--gray-50); font-weight: 600; }
 
 /* 질문 카드 크게 보기 */
 .big-card { font-size: 1.6rem; line-height: 1.6; padding: 36px; min-height: 260px; }
+.qcard-admin { min-height: calc(100vh - 90px); }
+.qcard-table-wrap { margin-top: 12px; border: 1px solid var(--gray-200); border-radius: var(--radius); }
+.qcard-table-wrap table { min-width: 980px; }
+.qcard-table-wrap th { position: sticky; top: 0; z-index: 1; }
+body.modal-open { overflow: hidden; }
+.modal-back.qcard-stage { padding: 0; background: #fff; }
+.modal.qcard-fullscreen { width: 100%; max-width: none; height: 100%; max-height: none; padding: 0; border-radius: 0; overflow: hidden; }
+.qcard-stage-shell { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; background: linear-gradient(145deg, #fff 0%, var(--gray-50) 100%); }
+.qcard-stage-head, .qcard-stage-foot { display: flex; align-items: center; gap: 12px; padding: 18px 28px; }
+.qcard-stage-head { border-bottom: 1px solid var(--gray-200); }
+.qcard-stage-foot { border-top: 1px solid var(--gray-200); justify-content: center; }
+.qcard-stage-meta { color: var(--gray-500); font-size: .9rem; }
+.qcard-stage-close { margin-left: auto; font-size: 1.25rem; line-height: 1; min-width: 44px; min-height: 44px; }
+.qcard-stage-body { display: flex; align-items: center; justify-content: center; padding: clamp(28px, 6vw, 96px); overflow: auto; }
+.qcard-stage-sentence { width: min(1200px, 100%); margin: 0; font-size: clamp(1.65rem, 3.2vw, 3.5rem); line-height: 1.55; font-weight: 700; letter-spacing: -.025em; text-align: center; white-space: pre-wrap; overflow-wrap: anywhere; }
+.qcard-stage-foot button { min-width: 92px; min-height: 44px; }
+.qcard-stage-count { min-width: 90px; text-align: center; color: var(--gray-500); font-variant-numeric: tabular-nums; }
 
 @media (max-width: 760px) {
   .layout-2, .viewer { grid-template-columns: 1fr; }
   main { padding: 16px; }
   .topbar { padding: 10px 16px; flex-wrap: wrap; }
   .big-card { font-size: 1.2rem; padding: 18px; }
+  .qcard-stage-head, .qcard-stage-foot { padding: 12px 16px; }
+  .qcard-stage-body { padding: 24px 18px; }
+  .qcard-stage-sentence { font-size: clamp(1.35rem, 7vw, 2.2rem); text-align: left; }
 }
