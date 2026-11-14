@@ -340,5 +340,5 @@ PRAGMA user_version = 5;
 | 보존 | `olaf-*.db` 최신 N개(기본 14)만 남김 · `pre-migrate-*`는 자동 삭제 안 함 |
 | 업데이트 전 | 서비스 중지 상태에서 `olaf.db` 파일 복사 (`deploy/update.ps1`) |
 | 복원 | 서비스 중지 → `olaf.db` 교체 · `olaf.db-wal`·`olaf.db-shm` 삭제 → 시작 → `/readyz` |
-| 별도 저장소 | `deploy/backup-copy.ps1`(예약 작업)이 `backups\`·`uploads\`를 승인된 위치로 복사 |
+| 별도 저장소 | Windows 작업 스케줄러에서 `robocopy`로 `backups\`·`uploads\`를 승인된 별도 디스크에 복사 |
 | 점검 | `node tools/check.js --integrity` → `PRAGMA integrity_check` = `ok` |

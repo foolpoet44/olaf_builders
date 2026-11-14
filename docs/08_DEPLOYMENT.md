@@ -1,6 +1,6 @@
 # 08. 배포 · 운영
 
-상위 계약: `reference/DEPLOYMENT_ENVIRONMENT.md` · 절차 원본: `reference/PRI_Windows_WebApp_Manual.md`.
+상위 계약: `reference/DEPLOYMENT_ENVIRONMENT.md` · 절차 원본: `reference/PRI_Windows_WebApp_Manual.md` · 운영 실행 런북: `docs/15_WINDOWS_LOCAL_SERVER.md`.
 이 문서는 그 계약을 OLAF Builders에 맞춰 구체화한 것이다. 이름·포트는 **제안값**(결정 B2).
 
 ## 1. 고정 값 (제안)
@@ -65,10 +65,11 @@ param(
 | 7 | `config\` ACL: 상속 해제, SYSTEM·Administrators 전체 (+서비스 계정 읽기) | 중단 |
 | 8 | **전경 시험:** 환경변수 설정 후 `node.exe src\server.js`를 `Start-Process -PassThru`로 → `/healthz`·`/readyz` 60초 대기(앱·릴리스 일치) → 프로세스 종료 → 포트 해제 확인 | 중단 (프로세스 정리) |
 | 9 | NSSM 등록 (아래) · **수동 시작(SERVICE_DEMAND_START)** | 등록 취소 안내 |
-| 10 | 첫 사무국: `node.exe tools\admin.js bootstrap OP-01 --name "<이름>"` → 코드 화면 1회 표시 | 안내 |
-| 11 | 요약 출력: 완료 단계 · 남은 수동 단계(계정·자동 시작·방화벽) | — |
+| 10 | 첫 사무국: ID/비밀번호를 가려 입력해 `tools\admin.js bootstrap` 실행 | 중단 또는 재설정 안내 |
+| 11 | 승인 콘텐츠 스냅샷 복원 (`-SkipContentRestore`로만 생략) | 중단 |
+| 12 | 요약 출력: 완료 단계 · 남은 수동 단계(계정·자동 시작·방화벽) | — |
 
-`-DryRun`: 0~3 검사만 실제 수행하고 4~11은 "할 일"로만 출력. 아무것도 만들지 않는다. "설치 완료"라고 출력하지 않는다.
+`-DryRun`: 사전 검사만 실제 수행하고 이후 설치 단계는 "할 일"로만 출력한다. 아무것도 만들지 않으며 "설치 완료"라고 출력하지 않는다.
 모든 외부 실행 파일 호출 뒤 `$LASTEXITCODE` 확인. 실패하면 `[FAIL]` + 완료/미완료 목록 + 복구 안내, 종료코드 1.
 
 ### NSSM 설정
@@ -136,7 +137,7 @@ New-NetFirewallRule -Name 'PRI-olaf-builders-TCP-8091' -DisplayName 'PRI-olaf-bu
 6. `Start-Service` → `/readyz` + release 일치 60초 대기.
 7. 실패하면 **자동 롤백**: 중지 → 이전 AppDirectory·APP_RELEASE 복원 → 스키마 버전이 바뀌었으면 4번 백업 DB로 복원 → 시작 → 결과 출력(`[ROLLED BACK]`).
 
-## 8. 롤백 `deploy/rollback.ps1 [-To <릴리스>] [-RestoreDb <백업파일>]`
+## 8. 롤백 `deploy/rollback.ps1 -ToRelease <릴리스> [-RestoreDb <백업파일>] -Confirm ROLLBACK`
 
 `deploy-history.log`의 직전 값으로 AppDirectory·APP_RELEASE 복원. 새 릴리스가 스키마를 올렸다면(`/readyz` 503 · 로그 `schema newer than code`) `-RestoreDb` 필수.
 
@@ -145,13 +146,13 @@ New-NetFirewallRule -Name 'PRI-olaf-builders-TCP-8091' -DisplayName 'PRI-olaf-bu
 | 작업 | 수단 |
 |---|---|
 | 일일 백업 | 앱 내부 (`docs/03_DATA_MODEL.md` 6절) |
-| 별도 저장소 복사 | `deploy/backup-copy.ps1 -Dest <승인 경로>` — `robocopy backups`·`uploads` /E · 예약 작업(04시, 서비스 계정 또는 SYSTEM) · 종료코드 0~7 성공 |
-| 복원 | `deploy/restore.ps1 -BackupFile <파일>`: 확인 입력(`RESTORE`) → 서비스 중지 → 현재 DB를 `backups\before-restore-<시각>.db`로 → 교체 · wal/shm 삭제 → 시작 → `/readyz` |
+| 별도 저장소 복사 | 승인된 예약 작업에서 `robocopy backups`·`uploads` /E · 종료코드 0~7 성공 |
+| 복원 | `deploy/restore.ps1 -BackupFile <파일> -Confirm RESTORE`: 무결성 검사 → 서비스 중지 → 현재 DB 보존 → 교체 · wal/shm 삭제 → 시작 → `/readyz` |
 | 복원 시험 | 분기 1회: 백업 파일로 개발 PC에서 `APP_DATA_DIR` 지정 기동 → 건수 대조 |
 
 ## 10. 제거 (별도 승인 · 파괴적)
 
-`deploy/uninstall.ps1 -Confirm olaf-builders`: 서비스 중지 → `nssm remove olaf-builders confirm` → 방화벽 규칙 `PRI-olaf-builders-TCP-8091`만 제거 → **파일은 지우지 않고** 남은 경로 목록 출력. 공유 폴더 삭제는 보존 기간 경과·승인 뒤 사람이 한다. 공용 Node·NSSM·기존 서비스는 건드리지 않는다.
+제거는 별도 변경 승인 후 수동으로 수행한다. 서비스 중지 → `nssm remove olaf-builders confirm` → 앱 전용 방화벽 규칙만 제거하고, **파일은 삭제하지 않는다**. 공유 폴더 삭제는 보존 기간 경과·승인 뒤 사람이 한다. 공용 Node·NSSM·기존 서비스는 건드리지 않는다.
 
 ## 11. 장애 대응 요약
 

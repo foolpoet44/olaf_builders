@@ -64,6 +64,45 @@ function Get-NssmValue([string]$Name) {
   return (($v -join "`n") -replace "`0", '').Trim()
 }
 
+function Get-NssmEnvironment {
+  $lines = & $Script:NssmPath get $Script:AppId AppEnvironmentExtra
+  if ($LASTEXITCODE -ne 0) { throw 'NSSM AppEnvironmentExtra 조회 실패' }
+  $map = @{}
+  foreach ($line in $lines) {
+    $clean = ([string]$line -replace "`0", '').Trim()
+    if ($clean -match '^([^=]+)=(.*)$') { $map[$Matches[1]] = $Matches[2] }
+  }
+  return $map
+}
+
+function Set-NssmEnvironment([hashtable]$Map) {
+  $block = @($Map.GetEnumerator() | Sort-Object Name | ForEach-Object { "$($_.Name)=$($_.Value)" })
+  & $Script:NssmPath set $Script:AppId AppEnvironmentExtra @block
+  if ($LASTEXITCODE -ne 0) { throw 'NSSM AppEnvironmentExtra 설정 실패' }
+}
+
+function Stop-AppConfirmed([int]$Port, [int]$TimeoutSec = 30) {
+  $svc = Get-Service -Name $Script:AppId -ErrorAction Stop
+  if ($svc.Status -ne 'Stopped') { Stop-Service -Name $Script:AppId -ErrorAction Stop }
+  $svc.WaitForStatus([System.ServiceProcess.ServiceControllerStatus]::Stopped, [TimeSpan]::FromSeconds($TimeoutSec))
+  if (Test-PortListening $Port) { throw "서비스 중지 뒤에도 포트 $Port 가 사용 중입니다" }
+}
+
+function Start-AppConfirmed([int]$Port, [string]$Release, [int]$TimeoutSec = 60) {
+  Start-Service -Name $Script:AppId -ErrorAction Stop
+  if (-not (Wait-AppReady -Port $Port -ExpectedRelease $Release -TimeoutSec $TimeoutSec)) {
+    throw "서비스 준비 실패: release=$Release"
+  }
+}
+
+function Test-DbIntegrity([string]$NodeExe, [string]$ReleaseDir, [string]$DbFile) {
+  Push-Location $ReleaseDir
+  try {
+    & $NodeExe 'tools\check.js' '--integrity-only' '--db' $DbFile
+    if ($LASTEXITCODE -ne 0) { throw "DB 무결성 검사 실패: $DbFile" }
+  } finally { Pop-Location }
+}
+
 function Test-Sha256List {
   param([Parameter(Mandatory)][string]$Zip, [Parameter(Mandatory)][string]$ShaFile)
   if (!(Test-Path -LiteralPath $ShaFile -PathType Leaf)) { throw "해시 파일 없음: $ShaFile" }

@@ -15,7 +15,9 @@ param(
   [string]$BindHost = '127.0.0.1',
   [string]$OfficeId = 'OP-01',
   [string]$OfficeName = '사무국',
+  [string]$OfficeUsername = 'dk.cho',
   [string]$NssmExe = 'C:\apps\meeting_recorder_v2\nssm.exe',
+  [switch]$SkipContentRestore,
   [switch]$DryRun
 )
 $ErrorActionPreference = 'Stop'
@@ -73,7 +75,8 @@ $steps = @(
   "7. config 폴더 ACL: 상속 해제 · SYSTEM·Administrators 전체 권한",
   "8. 전경 시험: node src\server.js → /healthz·/readyz (release=$Release) → 종료 · 포트 해제 확인",
   "9. NSSM 등록 '$($Script:AppId)' (수동 시작 · 로그 · 환경변수)",
-  "10. 첫 사무국 계정: node tools\admin.js bootstrap $OfficeId (코드 1회 표시)"
+  "10. 첫 사무국 계정: $OfficeId / $OfficeUsername (비밀번호 가림 입력)",
+  "11. 승인 콘텐츠 복원: data\legacy-content.json (SkipContentRestore=$SkipContentRestore)"
 )
 $manual = @(
   'services.msc 에서 olaf-builders 로그온 계정 지정 (결정 B4) · 권한 부여',
@@ -158,9 +161,33 @@ try {
   foreach ($kv in (Get-EnvBlock -Port $Port -BindHost $BindHost -Release $Release)) { $k, $v = $kv.Split('=', 2); [Environment]::SetEnvironmentVariable($k, $v, 'Process') }
   Push-Location $ReleaseDir
   try {
-    & $NodeExe 'tools\admin.js' 'bootstrap' $OfficeId '--name' $OfficeName
+    $secure = Read-Host "첫 사무국 $OfficeUsername 비밀번호" -AsSecureString
+    $ptr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
+    try {
+      $plain = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($ptr)
+      $plain | & $NodeExe 'tools\admin.js' 'bootstrap' $OfficeId '--name' $OfficeName '--username' $OfficeUsername '--password-stdin'
+    } finally {
+      if ($ptr -ne [IntPtr]::Zero) { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($ptr) }
+      $plain = $null
+      $secure = $null
+    }
     if ($LASTEXITCODE -ne 0) { Write-Warn2 '첫 사무국 계정 생성 실패 또는 이미 있음 — 위 메시지 확인' } else { Complete-Step $steps[6] }
   } finally { Pop-Location }
+
+  # 11 승인 콘텐츠
+  if ($SkipContentRestore) {
+    Write-Warn2 '승인 콘텐츠 복원을 건너뜁니다'
+    Complete-Step $steps[7]
+  } else {
+    $snapshot = Join-Path $ReleaseDir 'data\legacy-content.json'
+    if (!(Test-Path -LiteralPath $snapshot -PathType Leaf)) { throw "콘텐츠 스냅샷 없음: $snapshot" }
+    Push-Location $ReleaseDir
+    try {
+      & $NodeExe 'tools\import-legacy.js' 'snapshot' $snapshot '--actor' $OfficeId
+      if ($LASTEXITCODE -ne 0) { throw '승인 콘텐츠 복원 실패' }
+      Complete-Step $steps[7]
+    } finally { Pop-Location }
+  }
 } catch {
   Fail-Exit $_.Exception.Message '완료된 단계만 남아 있습니다. 서비스가 등록됐다면 nssm remove olaf-builders confirm 로 등록을 취소하고, 만든 릴리스 폴더를 지운 뒤 다시 실행하세요.'
 }
