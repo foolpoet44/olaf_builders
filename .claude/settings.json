@@ -1,0 +1,31 @@
+{
+  "hooks": {
+    "preCompact": {
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".claude/hooks/pre-compact.ps1"
+      ]
+    },
+    "sessionStart": {
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".claude/hooks/session-start.ps1"
+      ]
+    },
+    "stop": {
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        ".claude/hooks/stop.ps1"
+      ]
+    }
+  }
+}
