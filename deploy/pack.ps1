@@ -37,7 +37,8 @@ try {
 
   # 서버 꾸러미에 넣지 않는 것: 문서 원본 일부는 유지(README·docs), 사무국 PC 도구·dist 는 제외
   # src\schema-optional 은 결정 B8·B9 전에는 릴리스에 넣지 않는다 (docs/03 5항)
-  foreach ($x in @('tools\render-pdf', 'dist', 'test', 'src\schema-optional')) {
+  # csv\ (원본 CSV·다른 앱 소스 사본)·register-office.js (비밀번호 하드코딩)·BUILD_STATE.md·.claude\ 는 서버 꾸러미에 넣지 않는다
+  foreach ($x in @('tools\render-pdf', 'dist', 'test', 'src\schema-optional', 'csv', 'register-office.js', 'BUILD_STATE.md', '.claude')) {
     $p = Join-Path $stage $x
     if (Test-Path $p) { Remove-Item -Recurse -Force $p }
   }
