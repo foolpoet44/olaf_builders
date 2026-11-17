@@ -134,4 +134,4 @@ node tools\admin.js deactivate <person_id> --actor OP-01   # 탈퇴·제외 (상
 | 참여자 계정 `set-credentials` 후 브라우저 로그인 → 질문 카드 화면 | 서버 PC(PowerShell 5.1)에서의 실행 — 위 PowerShell 블록은 **개발 PC에서 bash로 확인한 명령을 옮긴 것**이며 실행해 보지 않았다 |
 | 비밀번호 규칙·아이디 규칙 (소스 확인) | 사번 패턴 혼입·진단 열 포함 CSV 거부 동작 (소스 규칙만 확인, 이번에 실행하지 않음) |
 
-계정 일괄 생성을 한 번에 하는 명령은 현재 없다(사람마다 `set-credentials`). 한 번에 만드는 도구는 단계 밖이므로 `STATUS.md` 「발견/제안」에 기록했다.
+**갱신(2026-11-17):** 한 번에 설정하는 명령 `node tools\admin.js import-credentials <person_id,username,password.csv> --actor OP-01 [--dry-run]`을 추가했다(결정 B12 — 아이디=이메일 앞부분, 초기 비밀번호=사번, 참여자만 규칙 완화). 하나라도 오류면 아무것도 저장하지 않고, 비밀번호는 출력·감사 기록에 남기지 않는다. CSV는 리포 밖에 두고 적용 직후 지운다.

@@ -102,6 +102,11 @@ export function validateConfig(c) {
   }
   need(int(c.auth?.sessionHours, 1, 24), 'auth.sessionHours must be 1..24');
   need(int(c.auth?.officeSessionHours, 1, 12), 'auth.officeSessionHours must be 1..12');
+  for (const [role, pol] of Object.entries(c.auth?.password ?? {})) {
+    need(role === 'default' || ['builder', 'master', 'office'].includes(role), `auth.password.${role} unknown`);
+    need(int(pol?.minLength, 6, 64), `auth.password.${role}.minLength must be 6..64`);
+    need(typeof pol?.requireMixedClasses === 'boolean', `auth.password.${role}.requireMixedClasses must be boolean`);
+  }
   need(int(c.backup?.hourLocal, 0, 23), 'backup.hourLocal must be 0..23');
   need(int(c.backup?.keep, 1, 90), 'backup.keep must be 1..90');
 

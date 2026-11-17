@@ -50,11 +50,11 @@ export class CredentialError extends Error {
 }
 
 /** 사용자명·비밀번호 설정. 기존 세션은 모두 종료한다. */
-export function setCredentials(db, { personId, username, password, actor, clock }) {
+export function setCredentials(db, { personId, username, password, actor, clock, policy }) {
   const normalized = normalizeUsername(username);
   const problems = [];
   if (!normalized) problems.push('아이디는 영문자로 시작하는 3~32자의 영문 소문자, 숫자, 점, 밑줄, 하이픈만 사용할 수 있습니다');
-  problems.push(...passwordProblems(password));
+  problems.push(...passwordProblems(password, policy));
   if (problems.length) throw new CredentialError(problems);
   const owner = db.prepare('SELECT person_id FROM credentials WHERE username = ? COLLATE NOCASE').get(normalized);
   if (owner && owner.person_id !== personId) throw new CredentialError(['이미 사용 중인 아이디입니다']);

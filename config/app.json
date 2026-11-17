@@ -148,6 +148,10 @@
   "auth": {
     "sessionHours": 8,
     "officeSessionHours": 2,
+    "password": {
+      "default": { "minLength": 10, "requireMixedClasses": true },
+      "builder": { "minLength": 6, "requireMixedClasses": false }
+    },
     "cookieName": "olaf_session",
     "rateLimit": {
       "windowMinutes": 10,

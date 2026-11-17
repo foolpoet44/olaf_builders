@@ -6,12 +6,17 @@ export function normalizeUsername(input) {
   return /^[a-z][a-z0-9._-]{2,31}$/.test(username) ? username : null;
 }
 
-export const passwordProblems = (password) => {
+export const STRONG_PASSWORD_POLICY = Object.freeze({ minLength: 10, requireMixedClasses: true });
+
+/** 역할별 비밀번호 규칙 — config.auth.password[role] 이 있으면 그것, 없으면 default, 그것도 없으면 강한 기본값 */
+export const passwordPolicyFor = (cfg, role) => cfg?.auth?.password?.[role] ?? cfg?.auth?.password?.default ?? STRONG_PASSWORD_POLICY;
+
+export const passwordProblems = (password, policy = STRONG_PASSWORD_POLICY) => {
   const value = String(password ?? '');
   const problems = [];
-  if (value.length < 10) problems.push('비밀번호는 10자 이상이어야 합니다');
+  if (value.length < policy.minLength) problems.push(`비밀번호는 ${policy.minLength}자 이상이어야 합니다`);
   if (value.length > 128) problems.push('비밀번호는 128자 이하여야 합니다');
-  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value) || !/[^A-Za-z0-9]/.test(value)) {
+  if (policy.requireMixedClasses && (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value) || !/[^A-Za-z0-9]/.test(value))) {
     problems.push('비밀번호에는 영문, 숫자, 특수문자가 모두 필요합니다');
   }
   return problems;

@@ -91,3 +91,34 @@ test('FR-ADM-06 deactivate 는 로그인 정보·세션 삭제 · list 는 아�
   assert.match(lines.find((line) => line.startsWith('TEST-002')), /\tN\t-\t/);
   c.db.close();
 });
+
+test('B12 참여자는 완화된 비밀번호 규칙(6자 이상) · 사무국은 강한 규칙 유지', () => {
+  const { c, sh, call } = ctx();
+  bootstrap(sh);
+  sh('import-roster', roster.pathname.replace(/^\/([A-Za-z]:)/, '$1'), '--actor', 'OP-01');
+  assert.equal(call('123456', 'set-credentials', 'TEST-001', '--username', 'builder.one', '--password-stdin', '--actor', 'OP-01'), 0);
+  assert.ok(findByCredentials(c.db, 'builder.one', '123456'));
+  assert.equal(call('12345', 'set-credentials', 'TEST-002', '--username', 'builder.two', '--password-stdin', '--actor', 'OP-01'), 2);
+  assert.equal(call('123456', 'set-credentials', 'OP-01', '--username', 'admin.local', '--password-stdin', '--actor', 'OP-01'), 2);
+  c.db.close();
+});
+
+test('B12 import-credentials: 시험은 저장 안 함 · 오류 하나면 전부 취소 · 비밀번호 미출력 · 감사 기록', () => {
+  const { c, dir, lines, sh } = ctx();
+  bootstrap(sh);
+  sh('import-roster', roster.pathname.replace(/^\/([A-Za-z]:)/, '$1'), '--actor', 'OP-01');
+  const file = path.join(dir, 'cred.csv');
+  fs.writeFileSync(file, '﻿person_id,username,password\nTEST-001,gildong.hong,654321\nTEST-002,sunsin.lee,765432\n');
+  assert.equal(sh('import-credentials', file, '--actor', 'OP-01', '--dry-run'), 0);
+  assert.equal(c.db.prepare('SELECT COUNT(*) n FROM credentials').get().n, 1);   // 사무국만
+  fs.writeFileSync(file, 'person_id,username,password\nTEST-001,gildong.hong,654321\nTEST-002,gildong.hong,765432\n');
+  assert.equal(sh('import-credentials', file, '--actor', 'OP-01'), 1);
+  assert.equal(c.db.prepare('SELECT COUNT(*) n FROM credentials').get().n, 1);
+  fs.writeFileSync(file, 'person_id,username,password\nTEST-001,gildong.hong,654321\nTEST-002,sunsin.lee,765432\n');
+  assert.equal(sh('import-credentials', file, '--actor', 'OP-01'), 0);
+  assert.ok(findByCredentials(c.db, 'gildong.hong', '654321'));
+  assert.ok(findByCredentials(c.db, 'sunsin.lee', '765432'));
+  assert.ok(!lines.join('\n').match(/654321|765432/));
+  assert.ok(c.db.prepare("SELECT 1 FROM audit_log WHERE action='credentials_import'").get());
+  c.db.close();
+});

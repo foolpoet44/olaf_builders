@@ -19,7 +19,7 @@ async function load() {
 
 function editCredentials(p) {
   const username = el('input', { type: 'text', value: p.username ?? '', maxlength: 32, autocomplete: 'username', required: true });
-  const password = el('input', { type: 'password', maxlength: 128, minlength: 10, autocomplete: 'new-password', required: true });
+  const password = el('input', { type: 'password', maxlength: 128, minlength: 6, autocomplete: 'new-password', required: true });
   const out = el('div');
   const form = el('form', {},
     el('h3', {}, `${p.name} 로그인 설정`),

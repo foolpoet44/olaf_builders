@@ -4,6 +4,7 @@
 //   echo <password> | node tools/admin.js bootstrap OP-01 --name "사무국" --username admin --password-stdin
 //   node tools/admin.js import-roster <명단.csv> --actor OP-01 [--dry-run]
 //   echo <password> | node tools/admin.js set-credentials <person_id> --username <id> --password-stdin --actor OP-01
+//   node tools/admin.js import-credentials <person_id,username,password.csv> --actor OP-01 [--dry-run]
 //   node tools/admin.js deactivate <person_id> --actor OP-01
 //   node tools/admin.js list
 //
@@ -14,7 +15,8 @@ import { resolveEnv, loadConfig } from '../src/config.js';
 import { openDb, migrate, tx } from '../src/db.js';
 import { makeAudit } from '../src/repo/audit.js';
 import { getPerson, listPeople, upsertPerson, setCredentials, CredentialError, deactivate, countOffice } from '../src/repo/people.js';
-import { parseRosterCsv } from '../src/domain/roster.js';
+import { parseRosterCsv, parseCsv } from '../src/domain/roster.js';
+import { passwordPolicyFor, passwordProblems, normalizeUsername } from '../src/auth.js';
 import { systemClock, isoNow } from '../src/lib/clock.js';
 
 export function openContext(env, { clock = systemClock, dbFile } = {}) {
@@ -120,11 +122,73 @@ export function run(ctx, argv, out = console.log, readSecret = () => fs.readFile
         if (!flags.username) throw new UsageError('--username <로그인 아이디> 가 필요합니다');
         const password = readPassword(flags, readSecret);
         try {
-          const username = setCredentials(db, { personId: p.id, username: flags.username, password, actor, clock });
+          const username = setCredentials(db, { personId: p.id, username: flags.username, password, actor, clock, policy: passwordPolicyFor(cfg, p.role) });
           audit(actor, 'credentials_set', p.id);
           out(`[완료] ${p.id} 로그인 아이디 ${username} 설정 · 기존 세션 종료`);
         } catch (error) {
           if (error instanceof CredentialError) throw new UsageError(error.problems.join(' · '));
+          throw error;
+        }
+        return 0;
+      }
+      case 'import-credentials': {
+        // 여러 명의 로그인 정보를 한 번에 설정한다. CSV 열: person_id,username,password (결정 B12)
+        // 하나라도 오류면 아무것도 저장하지 않는다. 비밀번호는 출력·감사 기록에 남기지 않는다.
+        if (!arg) throw new UsageError('CSV 경로가 필요합니다 (열: person_id,username,password)');
+        const actor = needActor(ctx, flags);
+        let text;
+        try { text = fs.readFileSync(arg, 'utf8').replace(/^\uFEFF/, ''); } catch { throw new UsageError(`파일을 읽을 수 없습니다: ${arg}`); }
+        const rows = parseCsv(text);
+        const head = (rows[0] ?? []).map((h) => h.trim());
+        const col = Object.fromEntries(['person_id', 'username', 'password'].map((c) => [c, head.indexOf(c)]));
+        if (Object.values(col).some((i) => i < 0)) throw new UsageError('열 이름은 person_id,username,password 여야 합니다');
+        const problems = [];
+        const seenIds = new Set();
+        const seenNames = new Map();
+        const items = [];
+        rows.slice(1).forEach((r, n) => {
+          const line = n + 2;
+          if (r.every((v) => !String(v ?? '').trim())) return;
+          const id = String(r[col.person_id] ?? '').trim();
+          const person = getPerson(db, id);
+          const name = normalizeUsername(r[col.username]);
+          const password = String(r[col.password] ?? '');
+          if (!person) { problems.push(`${line}행: 없는 사람 ${id}`); return; }
+          if (!person.active) problems.push(`${line}행: 비활성 사용자 ${id}`);
+          if (seenIds.has(id)) problems.push(`${line}행: 같은 사람이 두 번 있습니다 ${id}`);
+          seenIds.add(id);
+          if (!name) problems.push(`${line}행: ${id} 아이디 형식 오류`);
+          else {
+            if (seenNames.has(name)) problems.push(`${line}행: 아이디가 겹칩니다 (${seenNames.get(name)} 와 ${id})`);
+            seenNames.set(name, id);
+          }
+          for (const m of passwordProblems(password, passwordPolicyFor(cfg, person.role))) problems.push(`${line}행: ${id} ${m}`);
+          items.push({ person, username: name, password });
+        });
+        if (!items.length && !problems.length) problems.push('읽을 행이 없습니다');
+        if (problems.length) {
+          out('[멈춤] 아무것도 저장하지 않았습니다:');
+          for (const p of problems) out(`  - ${p}`);
+          return 1;
+        }
+        const apply = () => {
+          for (const it of items) {
+            setCredentials(db, { personId: it.person.id, username: it.username, password: it.password, actor, clock, policy: passwordPolicyFor(cfg, it.person.role) });
+            audit(actor, 'credentials_set', it.person.id);
+          }
+          audit(actor, 'credentials_import', `${items.length} rows`);
+        };
+        try {
+          if (flags['dry-run']) {
+            db.exec('BEGIN IMMEDIATE');
+            try { apply(); } finally { db.exec('ROLLBACK'); }
+            out(`[시험] ${items.length}명 로그인 정보 설정 가능 (저장 안 함)`);
+          } else {
+            tx(db, apply);
+            out(`[완료] ${items.length}명 로그인 정보를 설정했습니다 · 기존 세션 종료. CSV 파일은 지금 지우세요`);
+          }
+        } catch (error) {
+          if (error instanceof CredentialError) { out(`[멈춤] ${error.problems.join(' · ')}`); return 1; }
           throw error;
         }
         return 0;
@@ -146,7 +210,7 @@ export function run(ctx, argv, out = console.log, readSecret = () => fs.readFile
         return 0;
       }
       default:
-        throw new UsageError('명령: bootstrap | import-roster | set-credentials | deactivate | list');
+        throw new UsageError('명령: bootstrap | import-roster | set-credentials | import-credentials | deactivate | list');
     }
   } catch (e) {
     if (e instanceof UsageError) { out(`[사용법] ${e.message}`); return 2; }

@@ -2,6 +2,7 @@
 import { Router } from 'express';
 import { requireRole } from '../middleware/session.js';
 import { listPeople, getPerson, setCredentials, CredentialError, deactivate } from '../repo/people.js';
+import { passwordPolicyFor } from '../auth.js';
 import { listAudit } from '../repo/audit.js';
 import { ok, E, wrap } from '../lib/http.js';
 import { isoNow } from '../lib/clock.js';
@@ -32,6 +33,7 @@ export function adminRoutes(api, deps) {
         password: req.body?.password,
         actor: req.user.id,
         clock,
+        policy: passwordPolicyFor(deps.settings.cfg, p.role),
       });
     } catch (error) {
       if (error instanceof CredentialError) throw E.validation(error.problems);
