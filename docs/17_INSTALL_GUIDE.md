@@ -1,4 +1,4 @@
-# 17. 설치 가이드 — 릴리스 20261116-01 (Windows 로컬서버)
+# 17. 설치 가이드 — 릴리스 20261117-01 (Windows 로컬서버)
 
 이 문서는 **설치하는 사람**을 위한 한 장짜리 순서표다. 구조·원칙은 `docs/15_WINDOWS_LOCAL_SERVER.md`, 결정 사항은 `docs/11_DECISIONS.md`.
 대상: 사내 Windows PC 한 대 · 관리자 PowerShell 5.1 · 서비스명 `olaf-builders` · 기본 포트 `8091`.
@@ -13,8 +13,8 @@
 
 | 파일 | 내용 |
 |---|---|
-| `olaf-builders-20261116-01.zip` (약 3.1MB) | 앱 코드 + 운영 의존성(`express`) + 스키마 001~004 + 사무국 CLI + 콘텐츠 스냅샷 + `deploy\*.ps1` + `docs\` |
-| `olaf-builders-20261116-01.sha256.txt` | zip 전체 해시와 파일별 해시. 설치 스크립트가 반입 중 변조·손상을 검사한다 |
+| `olaf-builders-20261117-01.zip` (약 3.1MB) | 앱 코드 + 운영 의존성(`express`) + 스키마 001~004 + 사무국 CLI + 콘텐츠 스냅샷 + `deploy\*.ps1` + `docs\` |
+| `olaf-builders-20261117-01.sha256.txt` | zip 전체 해시와 파일별 해시. 설치 스크립트가 반입 중 변조·손상을 검사한다 |
 
 **들어 있지 않은 것:** DB·비밀번호·세션·`.env`·`secrets.json`(서버에서 처음 기동할 때 자동 생성) · 테스트 · 원본 CSV · 사무국 PC용 PDF 변환 도구 · 개발용 메모.
 **따로 반입해야 하는 것:** 공식 **Node.js Windows x64 zip** (22.13 이상, 예: `node-v24.x.y-win-x64.zip`). 파일명 형식을 바꾸지 말 것.
@@ -23,7 +23,7 @@
 
 ### 개발 PC에서 확인해 둔 것 (2026-11-16, Linux 개발 환경)
 
-- 꾸러미를 새 폴더에 풀고 `NODE_ENV=production`으로 기동 → `/healthz`·`/readyz`가 릴리스 `20261116-01`과 일치
+- 꾸러미를 새 폴더에 풀고 `NODE_ENV=production`으로 기동 → `/healthz`·`/readyz`가 릴리스 `20261117-01`과 일치
 - 스키마 0→4 적용, `integrity_check=ok`
 - 스냅샷 복원: 사람 26 · 카드 44 · 감사 24건 추가 (사무국 1명 포함 사람 27)
 - 사무국 로그인 → 사무국 질문 카드 API 응답, 로그인 화면 200
@@ -62,15 +62,15 @@ Get-Volume | Select-Object DriveLetter,SizeRemaining
 서버의 `D:\in\`에 세 파일을 둔다.
 
 ```text
-D:\in\olaf-builders-20261116-01.zip
-D:\in\olaf-builders-20261116-01.sha256.txt      ← zip과 같은 폴더·같은 이름 규칙
+D:\in\olaf-builders-20261117-01.zip
+D:\in\olaf-builders-20261117-01.sha256.txt      ← zip과 같은 폴더·같은 이름 규칙
 D:\in\node-v24.x.y-win-x64.zip
 ```
 
 설치 스크립트는 꾸러미 **안**의 `deploy\`에 있다. 설치용 임시 폴더에 한 번 풀어 스크립트만 쓴다(이 폴더는 설치 뒤 지워도 된다).
 
 ```powershell
-Expand-Archive -LiteralPath D:\in\olaf-builders-20261116-01.zip -DestinationPath D:\in\olaf-builders
+Expand-Archive -LiteralPath D:\in\olaf-builders-20261117-01.zip -DestinationPath D:\in\olaf-builders
 cd D:\in\olaf-builders\deploy
 ```
 
@@ -80,8 +80,8 @@ cd D:\in\olaf-builders\deploy
 
 ```powershell
 .\install.ps1 `
-  -Release 20261116-01 `
-  -PackageZip D:\in\olaf-builders-20261116-01.zip `
+  -Release 20261117-01 `
+  -PackageZip D:\in\olaf-builders-20261117-01.zip `
   -NodeZip D:\in\node-v24.x.y-win-x64.zip `
   -NssmExe C:\apps\meeting_recorder_v2\nssm.exe `
   -OfficeUsername <사무국 로그인 아이디> `
@@ -100,7 +100,7 @@ DryRun을 통과했으면 `-DryRun`만 지우고 같은 명령을 **관리자 Po
 
 1. 폴더 생성 — 코드 `C:\apps\olaf-builders\{runtime,releases}`, 데이터 `C:\ProgramData\PRI\olaf-builders\{config,data,uploads,logs,backups}`
 2. Node 풀기 (22.13 미만이면 중단)
-3. 릴리스 풀기 → `C:\apps\olaf-builders\releases\20261116-01`
+3. 릴리스 풀기 → `C:\apps\olaf-builders\releases\20261117-01`
 4. `config` 폴더 접근 제한 (SYSTEM·Administrators만)
 5. **전경 시험**: 앱을 잠깐 띄워 `/healthz`·`/readyz`·릴리스 일치 확인 → 종료 → 포트 해제 확인
 6. NSSM 서비스 등록 — **수동 시작**
@@ -122,7 +122,7 @@ DryRun을 통과했으면 `-DryRun`만 지우고 같은 명령을 **관리자 Po
 
 ```powershell
 Start-Service olaf-builders
-cd C:\apps\olaf-builders\releases\20261116-01
+cd C:\apps\olaf-builders\releases\20261117-01
 .\deploy\check.ps1 -Port 8091
 Get-Content C:\ProgramData\PRI\olaf-builders\logs\err.log -Tail 50
 ```
@@ -158,11 +158,17 @@ HTTP는 승인된 내부 시험 범위까지다. 비밀번호·개인정보 운�
 
 ## 7. 설치 후 — 학습자 열기
 
-1. 명단 CSV로 사람 등록, 사람마다 로그인 정보 설정 → `docs/16_LEARNER_ONBOARDING.md` 3절
+1. 명단 CSV로 사람 등록 → 로그인 정보 일괄 설정 (결정 B12: 아이디=이메일 앞부분 · 초기 비밀번호=사번) → `docs/16_LEARNER_ONBOARDING.md` 3절
+   ```powershell
+   node tools\admin.js import-roster D:\private\roster.csv --actor OP-01
+   node tools\admin.js import-credentials D:\private\credentials.csv --actor OP-01 --dry-run
+   node tools\admin.js import-credentials D:\private\credentials.csv --actor OP-01
+   ```
+   두 CSV는 **리포·릴리스 폴더 밖**에 두고 적용 직후 지운다. 사번이 평문으로 들어 있다.
 2. 접속 안내문(주소 칸 채움)을 사무국이 직접 발송 → 같은 문서 2절
 3. 질문 카드 화면의 개선 제안(어미 중복·빈 과제명 등)은 같은 문서 1절. **학습자에게 열기 전에** 어미 중복 안내만이라도 반영할지 사무국이 정한다
 
-스냅샷의 Builder 26명은 사람 등록만 되어 있고 **로그인 정보가 없다.** 학습자가 들어오려면 사람마다 `set-credentials`가 필요하다.
+스냅샷의 Builder 26명은 사람 등록만 되어 있고 **로그인 정보가 없다.** 위 `import-credentials`로 설정한다. 엑셀 명단의 나머지 6명은 그룹 미정이라 아직 등록되지 않았다.
 
 ---
 
