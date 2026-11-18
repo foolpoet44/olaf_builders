@@ -97,6 +97,11 @@ test/
 | FR-EXT-12 | `personal_info` 신고 즉시 `hidden` · `other`는 그대로 · 중복 409 · 11번째 429 · `kept` 처리 시 복구 · builder 응답에 신고자 없음 |
 | FR-EXT-13 | (B8 후) 목록 응답에 `helpful` 없음 · 정렬 파라미터 무시 · 누가 눌렀는지 응답 없음 |
 | FR-EXT-14 | (B9 후) 결과에 응답자 정보 없음 · 마감 후 투표 410 · 선택지 개인정보 패턴 400 · 004 미적용 DB에서 기능 켜면 시작 거부 |
+| FR-EXT-15 | (`test/ext/intake.test.js` 8건) 단위: 길이 경계(min−1·min·max·max+1)·필수 칸·성명 길이·사번 7자리·이메일 거부 · 오류 문장에 입력값 미포함 · dedupe 키 정규화(공백·대소문자) |
+| FR-EXT-15 | 로그인 없이 `POST /api/intake` 201 · 같은 성명·본문 재전송 200 + 같은 `ref` · 행 1건 · 400 시 저장 안 됨(길이·필수·휴대전화) · 표에 `email`·`employee_id`·`phone` 칸 없음 · 감사 `intake_create` 행위자 `ANON` |
+| FR-EXT-15 | 권한: 비로그인 `GET /api/admin/intake` 401 · builder 조회·`PATCH` 403 · 현황 `total`·제출자 이름순 건수 · `items` id 오름차순(접수순) · `?affiliation=` 필터 · 응답 JSON에 `rank·score·top·best·recommend` 키 없음 |
+| FR-EXT-15 | 숨김: `PATCH status=hidden` 200 · 잘못된 값 400 · 목록·건수에서 제외 · `?hidden=1`이면 포함 · 감사 `intake_status` · DB 직접 본문 `UPDATE`·`DELETE` 거부(트리거) |
+| FR-EXT-15 | `intake.rateLimit.max=2`로 3번째 429 + `Retry-After` · `features.intake=false` → `POST /api/intake`·`GET /api/intake/form` 404 |
 | 원칙 | 코드 정적 검사: `ORDER BY`에 `count`·`helpful`·`reactions`가 들어간 사람·글 목록 쿼리 없음 (`grep` 기반 테스트) |
 
 ## 4. 인수 테스트 (대상 서버 · 운영자와 함께)
@@ -124,5 +129,8 @@ test/
 | A17 | (확장) 002·003 마이그레이션 업데이트 | `pre-migrate` 백업 생성 · 기존 데이터 유지 · 실패 유도 시 자동 롤백 |
 | A18 | (확장) 알림 배지·답변 채택·질문 카드 답변 글·신고 처리 | 시나리오대로 동작 · 사무국 외 신고자 비노출 |
 | A19 | (확장) 기능 하나 끄고 재시작 | 메뉴·블록 사라짐 · API 404 · 다른 기능 정상 |
+| A20 | (확장) 질문 접수: 다른 허용 PC 브라우저에서 `/ask.html`(로그인 없음)로 제출 → 사무국 `/admin/intake.html`에서 현황·카드 확인 | 접수번호 표시 · 현황 건수 일치 · 한글·이모지 정상 · 비로그인으로 사무국 API 401 |
+| A21 | (확장) 카드 전체 화면 공유(브라우저 Fullscreen API) | `←`/`→` 이동 · `Esc` 닫기 · `A` 작성자 가리기 · 숨김 후 목록에서 빠짐 — **E2E 자동 시험이 없으므로 사람이 확인** |
+| A22 | (확장) 무로그인 위험 확인(B13) | 11번째 연속 제출 429 · 사내망 밖 접속 차단(A13과 함께) · 타인 이름 제출 가능함을 사무국이 인지 · 미허용이면 `features.intake:false`로 개통 |
 
 "Running" · "200 응답"만으로 PASS를 매기지 않는다.
