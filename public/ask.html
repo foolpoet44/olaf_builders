@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>질문 제출 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/ask.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <main>
+    <h1>질문 제출</h1>
+    <p class="muted small">로그인 없이 낼 수 있습니다. 사번·이메일·전화번호는 쓰지 마세요.</p>
+    <section class="card" id="form-wrap">
+      <label for="affiliation">소속</label>
+      <input type="text" id="affiliation" autocomplete="organization">
+      <label for="name">성명</label>
+      <input type="text" id="name" autocomplete="name">
+      <label for="title">직급</label>
+      <input type="text" id="title">
+      <label for="body">질문 <span class="muted small" id="count"></span></label>
+      <textarea id="body" rows="5"></textarea>
+      <div id="out"></div>
+      <div class="row end" style="margin-top:12px"><button class="primary" id="submit">제출</button></div>
+    </section>
+  </main>
+</body>
+</html>

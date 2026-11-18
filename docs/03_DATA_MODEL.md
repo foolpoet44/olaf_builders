@@ -257,7 +257,35 @@ PRAGMA user_version = 3;
 
 `access_codes`를 삭제하고 `credentials`를 만든다. 기존 세션은 모두 삭제해 새 로그인 방식으로 다시 인증하게 한다.
 
-### `src/schema-optional/005_optional.sql` — 결정 B8·B9 승인 후에만
+### `src/schema/005_intake.sql` — 질문 접수 (`features.intake` · 결정 B13)
+
+로그인 없이 제출되는 질문 1건 = 1행. 사번·이메일·전화 칸은 **없다**. 본문·작성자 칸은 불변이고 바뀌는 것은 `status`뿐이다. 행 삭제는 막고 삭제 = `hidden`. (P3 `qcards`와 별개의 표 — 서로 참조하지 않는다.)
+
+```sql
+CREATE TABLE intake_questions (
+  id          INTEGER PRIMARY KEY,                    -- 접수번호 표시: Q-<id 4자리>
+  affiliation TEXT NOT NULL,                          -- 입력값 그대로 (≤ intake.affiliationMax)
+  name        TEXT NOT NULL,
+  title       TEXT NOT NULL,                          -- 직급
+  body        TEXT NOT NULL,                          -- 질문 본문 (불변)
+  dedupe_key  TEXT NOT NULL,                          -- sha256(정규화 성명 | 정규화 본문)
+  status      TEXT NOT NULL DEFAULT 'open' CHECK (status IN ('open','hidden')),
+  created_at  TEXT NOT NULL,
+  updated_at  TEXT NOT NULL
+);
+CREATE UNIQUE INDEX intake_dedupe ON intake_questions(dedupe_key);
+CREATE INDEX intake_order ON intake_questions(created_at, id);
+CREATE TRIGGER intake_no_delete BEFORE DELETE ON intake_questions
+  BEGIN SELECT RAISE(ABORT, 'intake_questions rows are never deleted'); END;
+CREATE TRIGGER intake_content_fixed BEFORE UPDATE OF affiliation, name, title, body, dedupe_key, created_at ON intake_questions
+  BEGIN SELECT RAISE(ABORT, 'intake_questions content is immutable; change status only'); END;
+PRAGMA user_version = 5;
+```
+
+- 횟수 제한은 기존 `rate_hits`(`scope='intake'`, 버킷=접속 IP)를 쓴다 — 새 표 없음.
+- 상태 변경 이력은 `audit_log`(`intake_status`)가 맡는다. 판(`*_versions`)은 없다 — 수정 기능이 없기 때문(본인 식별 수단 없음, ADR-13).
+
+### `src/schema-optional/005_optional.sql` — 결정 B8·B9 승인 후에만 (승인 뒤 옮길 때 **006으로 번호 변경**)
 
 ```sql
 -- 도움됐어요 (FR-EXT-13) — 건수 표시용, 본인 취소 허용
@@ -300,7 +328,7 @@ PRAGMA user_version = 5;
 
 > 2026-11-14 Node 24.19에서 001→002→003→004→005를 각각 트랜잭션으로 적용하고 제약(답변 글 1개·연결 대상 고정·신고 중복/삭제 차단)과 `integrity_check = ok`를 확인했다. 연결 PRAGMA(1절)는 트랜잭션 밖에서 연결 시 실행하고, 마이그레이션 파일에는 넣지 않는다.
 >
-> 004를 적용하지 않은 DB에서 `features.helpful`·`features.surveys`를 켜면 **시작 거부**한다(`config.js`가 `user_version`과 기능 키를 대조).
+> `reactions` 표가 없는 DB(= optional 스키마 미적용)에서 `features.helpful`·`features.surveys`를 켜면 **시작 거부**한다(`bootstrap.js`가 표 존재 여부와 기능 키를 대조 — 005 번호를 `intake`가 쓰므로 `user_version` 비교에서 바꿨다).
 
 ## 3. 아이디·비밀번호
 
@@ -321,7 +349,8 @@ PRAGMA user_version = 5;
 | 사번·이메일 저장 불가 | 칸 자체가 없음 + 입력 검사 (`domain/privacy.js`) |
 | 글의 연결 대상(질문 카드·자료) 변경 불가 · 질문 카드당 답변 글 1개 | `posts_ref_fixed` 트리거 · 부분 UNIQUE 인덱스 (002) |
 | 신고 행 삭제 불가 · 처리 전 중복 신고 불가 | `reports_no_delete` 트리거 · 부분 UNIQUE 인덱스 (003) |
-| 실제 삭제 허용 표 | `seen` · `bookmarks` · `post_tags`(글 수정 시 교체) · `reactions`(본인 취소) · `sessions` · `rate_hits` — 개인 정리·운영 데이터라 흔적 보존 대상 아님 |
+| 질문 접수 행 삭제 불가 · 본문·작성자 칸 수정 불가(상태만 변경) · 같은 성명·본문 1건 | `intake_no_delete`·`intake_content_fixed` 트리거 · UNIQUE `dedupe_key` (005) |
+| 실제 삭제 허용 표 | `seen` · `bookmarks` · `post_tags`(글 수정 시 교체) · `reactions`(본인 취소) · `sessions` · `rate_hits`(로그인·질문 접수 횟수 제한 겸용) — 개인 정리·운영 데이터라 흔적 보존 대상 아님 |
 | 보존 기간 만료 물리 삭제 | **이번 범위 아님** — 필요 시 사무국 승인 절차와 함께 별도 도구(트리거를 잠시 내리는 마이그레이션) |
 
 ## 5. 마이그레이션 규칙
@@ -330,7 +359,7 @@ PRAGMA user_version = 5;
 2. 시작 시 `user_version < 최신`이면: **먼저 `backups\pre-migrate-v<현재>-<시각>.db`로 `VACUUM INTO`** → 각 파일을 트랜잭션으로 적용.
 3. `user_version > 코드가 아는 최신`이면 시작 중단(구 릴리스로 롤백했는데 DB만 새것인 경우 — 백업 복원 필요 안내).
 4. 원칙적으로 칸 삭제·이름 변경은 하지 않는다. 보안 모델 교체처럼 명시적으로 폐기하는 데이터는 백업과 전용 회귀 테스트를 갖춘 마이그레이션에서만 제거한다.
-5. 코드가 아는 최신 버전 = 릴리스에 들어 있는 스키마 파일 중 가장 큰 번호. `005_optional.sql`은 기본 릴리스에 **포함하지 않고**, B8·B9 승인 후 그 파일을 추가한 릴리스에서만 적용된다.
+5. 코드가 아는 최신 버전 = 릴리스에 들어 있는 스키마 파일 중 가장 큰 번호. `005_intake.sql`은 기본 릴리스에 포함된다. 조건부 `schema-optional/005_optional.sql`은 기본 릴리스에 **포함하지 않고**, B8·B9 승인 후 **`006_optional.sql`로 번호를 바꿔** `src/schema/`에 추가한 릴리스에서만 적용된다.
 
 ## 6. 백업과 복원
 

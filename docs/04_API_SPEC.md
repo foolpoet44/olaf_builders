@@ -124,7 +124,7 @@ p001.webp … p033.webp
 
 `login_fail_limited` · `credentials_set` · `person_deactivate` · `roster_import` · `material_upload` · `material_status` · `qcard_create` · `qcard_edit` · `qcard_withdraw` · `qcard_status` · `qcard_select` · `export` · `setting_change` · `post_create` · `post_edit` · `post_delete` · `post_hide` · `post_restore` · `view_operator_screen` · `migrate` · `backup` · `import_legacy`
 
-확장 기능(9절): `post_pin` · `post_unpin` · `post_accept` · `post_unaccept` · `qcard_answer` · `post_auto_hide` · `report_create` · `report_resolve` · `survey_create` · `survey_close`
+확장 기능(9절): `post_pin` · `post_unpin` · `post_accept` · `post_unaccept` · `qcard_answer` · `post_auto_hide` · `report_create` · `report_resolve` · `survey_create` · `survey_close` · `intake_create`(행위자 `ANON`) · `intake_status`
 
 로그인 성공·실패 자체는 감사에 쓰지 않는다(`last_login` 날짜만). 횟수 제한에 걸리면 `login_fail_limited` 1줄(대상 없음).
 
@@ -161,6 +161,17 @@ p001.webp … p033.webp
 | `reports` | `POST /api/posts/:id/report` `{"reason","note"?}` | 읽기 권한 | 201 `data:{autoHidden}` · 처리 전 중복 409 · 하루 상한 429 |
 | `reports` | `GET /api/admin/reports?open=1&page=` | office | `items:[{id,post:{id,spaceId,title},reporter:{id,name},reason,note,autoHidden,createdAt,outcome}]` |
 | `reports` | `POST /api/admin/reports/:id/resolve` `{"outcome":"hidden"|"kept","reason"?}` | office | `kept`면 자동 숨김 복구 · 같은 글의 다른 미처리 신고도 함께 처리 |
+
+### 질문 접수 (`intake` · ADR-13)
+
+로그인 없이 쓰는 API는 **`POST /api/intake`와 `GET /api/intake/form` 둘뿐**이다. 기능이 꺼지면 아래 전부 404.
+
+| 키 | 메서드·경로 | 권한 | 요청·응답 |
+|---|---|---|---|
+| `intake` | `GET /api/intake/form` | **공개** | `data:{rules:{bodyMin,bodyMax,nameMax,affiliationMax,titleMax}}` |
+| `intake` | `POST /api/intake` | **공개** | `{"affiliation","name","title","body"}` → 201 `data:{id,ref:"Q-0001"}` · 같은 성명·본문 재전송 200(기존 `ref`) · 400 `problems`(길이·필수·사번/이메일/전화 패턴, 입력값 미반복) · 429 `Retry-After`(IP별 `intake.rateLimit`) |
+| `intake` | `GET /api/admin/intake` | office | `?affiliation=&name=&hidden=1` → `data:{summary:{total,submitters:[{name,title,affiliation,count}],byAffiliation:[{affiliation,count}]}, items:[{id,ref,affiliation,name,title,body,status,createdAt}]}` · `items`는 접수순 고정, `submitters`는 이름순, 숨김 제외(`hidden=1`이면 포함) · 감사 `view_operator_screen` |
+| `intake` | `PATCH /api/admin/intake/:id` | office | `{"status":"open"|"hidden"}` · 감사 `intake_status` · 본문 수정·삭제 API 없음 |
 
 ### 조건부 (B8 · B9 승인 후)
 

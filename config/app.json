@@ -360,8 +360,17 @@
     "bookmarks": true,
     "tags": true,
     "reports": true,
+    "intake": true,
     "helpful": false,
     "surveys": false
+  },
+  "intake": {
+    "bodyMin": 10,
+    "bodyMax": 500,
+    "nameMax": 20,
+    "affiliationMax": 40,
+    "titleMax": 20,
+    "rateLimit": { "max": 10, "windowSec": 600 }
   },
   "directory": {
     "showChallenge": false

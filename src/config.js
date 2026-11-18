@@ -9,11 +9,11 @@ export const PROTECTED_PORTS = [80, 443, 1234, 3389, 8080, 8081];
 export const OVERRIDE_KEYS = [
   'configVersion', 'qcards', 'auth', 'backup', 'logs', 'materials', 'visibility', 'sessions', 'brand', 'meta',
   'site', 'features', 'events', 'directory', 'qcardAnswer', 'notifications', 'digest', 'tags',
-  'moderation', 'surveys',
+  'moderation', 'surveys', 'intake',
 ];
 export const FEATURE_KEYS = [
   'templates', 'directory', 'pin', 'accept', 'qcardAnswer', 'notifications', 'events', 'digest',
-  'materialThreads', 'bookmarks', 'tags', 'reports', 'helpful', 'surveys',
+  'materialThreads', 'bookmarks', 'tags', 'reports', 'helpful', 'surveys', 'intake',
 ];
 // 이 기능들은 004 스키마가 필요하다
 export const SCHEMA5_FEATURES = ['helpful', 'surveys'];
@@ -129,6 +129,12 @@ export function validateConfig(c) {
   if (c.moderation) {
     need((c.moderation.immediateHideReasons ?? []).every((r) => (c.posts?.hideReasons ?? []).includes(r)),
       'moderation.immediateHideReasons must be subset of posts.hideReasons');
+  }
+  if (c.intake) {
+    const i = c.intake;
+    need(int(i.bodyMin, 1, 200) && int(i.bodyMax, i.bodyMin ?? 1, 2000), 'intake.bodyMin/bodyMax invalid');
+    for (const k of ['nameMax', 'affiliationMax', 'titleMax']) need(int(i[k], 1, 100), `intake.${k} must be 1..100`);
+    need(int(i.rateLimit?.max, 1, 1000) && int(i.rateLimit?.windowSec, 10, 86400), 'intake.rateLimit invalid');
   }
   if (c.qcardAnswer) {
     const sp = (c.spaces ?? []).find((s) => s.code === c.qcardAnswer.space);

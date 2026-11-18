@@ -36,6 +36,8 @@
 | `admin/materials.html` | P2 | office | 꾸러미 업로드 · 자료 표(상태 변경·열람 건수) |
 | `admin/qcards.html` | P3 | office | 필터(세션·Lab·상태) · 표 · 한 장 크게 보기(←/→ · 글자 크게) · 상태 변경 · 대표/예비 선정 · CSV 내려받기 · 마감 스위치 |
 | `admin/audit.html` | P3 | office | 감사 기록 표(최신순) |
+| `ask.html` | 확장(`intake`) | **공개(로그인 없음)** | 소속·성명·직급·질문 4칸 · 질문 글자 수 · 서버 검사 문장 목록 · 제출 뒤 접수번호 안내와 같은 화면에서 이어 쓰기(질문 칸만 비움) · 기능 꺼짐·오류면 안내만 |
+| `admin/intake.html` | 확장(`intake`) | office | 제출 현황(총건수·소속별 건수·제출자 이름순 표) · 소속·제출자·숨김 포함 필터 · 질문 카드 격자(접수순, **정렬 선택 없음**) · 카드별 "전체 화면"·숨김/해제 · 전체 화면 공유(`←`/`→` 이동 · `Esc` 닫기 · `A` 작성자 가리기=화면 표시만) |
 | `404.html` | P0 | 공개 | 안내 + 첫 화면 링크 |
 
 ### 3-1. 커뮤니티 확장 화면 (`docs/13`)
@@ -57,6 +59,7 @@
 | `board.html` | P4.6 | `tags` | 글 폼 태그 선택(체크 목록 · Lab별 묶음) · 글에 태그 칩 · 칩 누르면 `?tag=` 필터 |
 | `board.html` · `admin/reports.html`(새 파일) | P4.6 | `reports` | 글·댓글 "신고"(사유 선택 + 메모) · 사무국 처리 목록 · 포털 "처리 대기 n" 배지 |
 | `board.html` 글 보기 | 조건부 | `helpful` | "도움됐어요 n" 버튼 — **상세에서만**, 목록·정렬 없음 |
+| `ask.html` · `admin/intake.html`(새 파일) | 확장 | `intake` | 위 표 참고 · 사무국 첫 화면 메뉴 카드 "질문 접수"(`features.intake`가 꺼지면 숨김) · 참여자 포털 메뉴에는 넣지 않고 사무국이 주소(`/ask.html`)를 별도 전달 |
 | `surveys.html`(새 파일) · `admin/surveys.html` | 조건부 | `surveys` | 진행 중 설문 응답 · 결과(건수 막대) · 사무국 만들기·마감 |
 
 `menuItems`에 `directory`·`events`·`bookmarks`·`surveys`를 추가하고 `menus`의 역할 목록에서 켠다(`config/app.json`).

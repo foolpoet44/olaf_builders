@@ -5,6 +5,7 @@ import { pin } from './pin.js';
 import { accept } from './accept.js';
 import { qcardAnswer } from './qcard-answer.js';
 import { notifications } from './notifications.js';
+import { intake } from './intake.js';
 import { events, digest, materialThreads, bookmarks, tags, reports } from './more.js';
 
 /** [기능 키, 등록 함수] — 기능이 꺼져 있어도 등록은 하고 featureGate·훅 안의 검사로 막는다 */
@@ -21,6 +22,7 @@ export const EXTENSIONS = [
   ['bookmarks', bookmarks],
   ['tags', tags],
   ['reports', reports],
+  ['intake', intake],   // docs/18
 ];
 
 export function registerExtensions(api, deps) {
