@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>질문 접수 · OLAF Builders</title>
+  <link rel="stylesheet" href="/assets/app.css">
+  <script type="module" src="/assets/js/admin-intake.js"></script>
+</head>
+<body>
+  <div class="sec-band">LGE Internal Use Only</div>
+  <header class="topbar" id="top"></header>
+  <main class="wide">
+    <div class="row">
+      <h1 style="margin:0">질문 접수</h1>
+      <span class="spacer"></span>
+      <span class="muted small">제출 주소: <code>/ask.html</code></span>
+    </div>
+    <h2>제출 현황</h2>
+    <div id="summary" class="card"></div>
+    <h2 style="margin-top:24px">질문 카드</h2>
+    <p class="small muted">접수순입니다 (순위 없음). 카드를 누르면 전체 화면으로 공유합니다.</p>
+    <div class="row">
+      <select id="f-aff"><option value="">전체 소속</option></select>
+      <select id="f-name"><option value="">전체 제출자</option></select>
+      <label class="row" style="margin:0"><input type="checkbox" id="f-hidden"> 숨김 포함</label>
+    </div>
+    <div class="grid" id="cards"></div>
+  </main>
+</body>
+</html>

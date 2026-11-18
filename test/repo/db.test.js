@@ -59,7 +59,7 @@ test('v3 → v4 인증 전환: 접속 코드 제거 · credentials 생성 · 세
   db.exec("INSERT INTO sessions VALUES('token','OP-01','office','t','2999-01-01T00:00:00Z')");
   const result = migrate(db, { backupDir: path.join(dir, 'backups') });
   assert.equal(result.from, 3);
-  assert.equal(result.to, 4);
+  assert.equal(result.to, latestVersion());
   assert.ok(result.backup);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name='access_codes'").get().n, 0);
   assert.equal(db.prepare("SELECT COUNT(*) n FROM sqlite_master WHERE type='table' AND name='credentials'").get().n, 1);

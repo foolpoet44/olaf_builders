@@ -26,7 +26,7 @@ export function bootstrap(env, opt = {}) {
   const mig = migrate(db, { backupDir: env.backupDir, now: clock.now() });
   const schemaVersion = latestVersion();
   const on = SCHEMA5_FEATURES.filter((k) => cfg.features?.[k]);
-  if (on.length && schemaVersion < 5) {
+  if (on.length && !db.prepare("SELECT 1 FROM sqlite_master WHERE name = 'reactions'").get()) {
     db.close();
     throw new ConfigError(`features ${on.join(', ')} 은(는) 스키마 005 가 필요합니다 (결정 B8·B9 후 005_optional.sql 포함)`);
   }
