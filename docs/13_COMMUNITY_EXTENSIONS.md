@@ -1,7 +1,7 @@
 # 13. 커뮤니티 확장 기능 (추가형)
 
-P4(커뮤니티 기본) 위에 **기존 구조를 고치지 않고 더하기만** 해서 붙이는 기능 14종.
-요구사항 ID `FR-EXT-<번호>` · 단계 P4.5(1차) · P4.6(2차) · P5-조건부(승인 후).
+P4(커뮤니티 기본) 위에 **기존 구조를 고치지 않고 더하기만** 해서 붙이는 기능 15종.
+요구사항 ID `FR-EXT-<번호>` · 단계 P4.5(1차) · P4.6(2차) · P5-조건부(승인 후) · 질문 접수(15, 2026-11-18).
 
 ## 1. 추가 규칙 (모든 확장 기능 공통)
 
@@ -11,7 +11,7 @@ P4(커뮤니티 기본) 위에 **기존 구조를 고치지 않고 더하기만*
 | 서버 | 새 `routes/<기능>.js`(+필요 시 `domain/<기능>.js`·`repo/<기능>.js`). `app.js`에는 등록 한 줄씩만 |
 | 화면 | 기존 화면에 블록 추가 또는 새 파일 1개. 공통 `common.js`의 `api`·`el` 재사용 |
 | 켜고 끄기 | `config/app.json`의 `features.<키>`. 꺼지면 해당 API **404**(`featureGate` 미들웨어), `/api/me`의 `features`가 false라 화면 블록 숨김 |
-| 권한 | 기존 `can()`·`requireRole`·`requireLogin`만 사용. 새 권한 체계 금지 |
+| 권한 | 기존 `can()`·`requireRole`·`requireLogin`만 사용. 새 권한 체계 금지 (**예외: `intake`의 무로그인 제출 2개 API만 — ADR-13**) |
 | 기록 | 기존 `audit()` 함수. 동작 이름은 4절 표 |
 | 의존성 | 추가 0 |
 | 원칙 | 판정 금지 · 개인정보 최소 · 흔적 보존 · 자동 발송 금지 (CLAUDE.md A절) |
@@ -40,7 +40,9 @@ export const featureGate = (key) => (req, res, next) =>
 | 12 | `reports` | 신고·사무국 처리 | 003 표 | P4.6 | on |
 | 13 | `helpful` | "도움됐어요" (건수만) | 005 표 | P5-조건부 | **off** · 결정 B8 |
 | 14 | `surveys` | 사무국 간단 설문 | 005 표 | P5-조건부 | **off** · 결정 B9 |
+| 15 | `intake` | 질문 접수(무로그인 제출) · 사무국 현황·카드 전체 화면 공유 | 005 표(`intake_questions`) | 확장 | on · 결정 B13 |
 
+> 15번(`intake`)은 스키마 **005**(`005_intake.sql`)를 쓴다. 보류 중인 `schema-optional/005_optional.sql`(13·14번)은 승인 뒤 옮길 때 **006으로 번호를 바꾼다**.
 > 마이그레이션 002·003은 해당 단계에서 적용한다. 기능이 꺼져 있어도 표·칸은 존재해도 된다(빈 채로). 004는 B8 또는 B9 승인 후에만 만든다.
 
 ## 3. 기능별 명세
@@ -131,11 +133,19 @@ export const featureGate = (key) => (req, res, next) =>
 - 선택지에 사람 이름·과제를 넣지 않는다(화면 경고 + 개인정보 패턴 검사). 평가·투표로 사람을 고르는 용도 금지.
 - 화면 `surveys.html` + 포털 "진행 중 설문". 감사 `survey_create`·`survey_close`.
 
+### FR-EXT-15 질문 접수 (`intake`) — 결정 B13
+- 로그인·사전등록 없이 소속·성명·직급·질문 4칸을 제출한다(`/ask.html`). 표 `intake_questions` 1개(`status` = `open`·`hidden`).
+- 사번·이메일·전화 칸 없음 · 4칸 모두 개인정보 패턴 검사 · 본문·작성자 칸 불변(트리거) · 행 삭제 금지(숨김 = `hidden`) · 같은 성명·본문은 한 건(`dedupe_key`).
+- 사무국(`/admin/intake.html`): 제출 현황(건수·제출자 이름순 명단) · 카드(접수순 고정) 목록 · 카드 전체 화면 공유(`←`/`→`·`Esc`·`A` 작성자 가리기) · 숨김/해제.
+- 무로그인 방어: IP별 횟수 제한(`intake.rateLimit`, 기본 10분 10건) · 길이 상한(`intake.*Max`·`bodyMin/Max`) · 중복 방지. 잔여 위험(타인 이름 제출·미제출자 파악 불가)은 ADR-13.
+- **금지:** 순위·점수·추천·"좋은 질문" 표시 · 제출자별 비교 통계 · 사번·이메일 수집 · 카드 정렬 옵션 추가(접수순 고정) · 자동 발송.
+- 설정: `features.intake` · `intake{bodyMin,bodyMax,nameMax,affiliationMax,titleMax,rateLimit{max,windowSec}}`. 상세·검증 범위 `docs/18_QUESTION_INTAKE.md`.
+
 ## 4. 감사 기록 동작 이름 (추가분)
 
-`post_pin` · `post_unpin` · `post_accept` · `post_unaccept` · `qcard_answer` · `post_auto_hide` · `report_create` · `report_resolve` · `survey_create` · `survey_close`
+`post_pin` · `post_unpin` · `post_accept` · `post_unaccept` · `qcard_answer` · `post_auto_hide` · `report_create` · `report_resolve` · `survey_create` · `survey_close` · `intake_create`(행위자 `ANON`) · `intake_status`
 
-(감사 기록하지 않는 것: 디렉터리 열람 · 알림 확인 · 저장함 · 태그 조회 · 도움됐어요 · 설문 응답 — 개인 행동 기록을 늘리지 않는다.)
+(감사 기록하지 않는 것(질문 접수 폼 조회 `GET /api/intake/form` 포함): 디렉터리 열람 · 알림 확인 · 저장함 · 태그 조회 · 도움됐어요 · 설문 응답 — 개인 행동 기록을 늘리지 않는다.)
 
 ## 5. 넣지 않는 것 (재확인)
 
